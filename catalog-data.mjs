@@ -205,7 +205,7 @@ export const CHARACTERS=[
   {
     "id": "warden",
     "name": "ウォーデン",
-    "category": "monsters",
+    "category": "bosses",
     "color": "#8aaa6d",
     "skin": "#b7ac94",
     "fact": "暗い地下にいる大きなモンスター。音や振動を感じ取るよ。",
@@ -232,7 +232,7 @@ export const CHARACTERS=[
   {
     "id": "elder-guardian",
     "name": "エルダーガーディアン",
-    "category": "monsters",
+    "category": "bosses",
     "color": "#8aaa6d",
     "skin": "#b7ac94",
     "fact": "海底神殿にいる、大きなガーディアンのなかまだよ。",
@@ -601,7 +601,7 @@ export const CHARACTERS=[
   {
     "id": "piglin-brute",
     "name": "ピグリンブルート",
-    "category": "monsters",
+    "category": "bosses",
     "color": "#8aaa6d",
     "skin": "#b7ac94",
     "fact": "砦の遺跡を守る、金の斧を持ったピグリン。",

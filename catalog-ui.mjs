@@ -1,5 +1,5 @@
-import {CATEGORIES,CHARACTERS,BY_ID,BREAK_HITS} from './catalog-data.mjs?v=0.1.8';
-import {createCollectionStore} from './catalog-model.mjs?v=0.2.7';
+import {CATEGORIES,CHARACTERS,BY_ID,BREAK_HITS} from './catalog-data.mjs?v=0.2.8';
+import {createCollectionStore} from './catalog-model.mjs?v=0.2.8';
 // Temporary review build: disable this flag when the collection check is complete.
 const REVIEW_UNLOCK_ALL=true;
 const $=id=>document.getElementById(id);

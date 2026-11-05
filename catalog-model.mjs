@@ -1,4 +1,4 @@
-import {CHARACTERS,BY_ID,SAVE_KEY,BREAK_HITS} from './catalog-data.mjs?v=0.1.8';
+import {CHARACTERS,BY_ID,SAVE_KEY,BREAK_HITS} from './catalog-data.mjs?v=0.2.8';
 export const REVIEW_BACKUP_KEY='micra-rails.collection.review-backup.v0.2.7';
 const REVIEW_TAG='all-cards-v0.2.7';
 const normal=CHARACTERS.filter(c=>c.category!=='bosses');

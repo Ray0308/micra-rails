@@ -40,10 +40,10 @@ body[data-screen="game"]::before,body[data-screen="game"]::after{display:none}
 @media(max-width:420px){.title-menu{width:92%;gap:12px}.menu-screen{padding-left:16px;padding-right:16px}.menu-panel{padding:18px}.title-footer{font-size:9px}.mc-button{min-height:54px}.encyclopedia article{gap:12px}.game-name{font-size:11px}}
 @media(orientation:landscape) and (max-height:520px){#title-screen{padding-top:16px;padding-bottom:40px}.title-logo{width:min(400px,50vw);margin-bottom:16px}.title-menu{width:320px;gap:7px}.mc-button{min-height:40px;padding:6px 18px;font-size:16px}.title-footer{bottom:10px}}
 
-/* Gentle title-only drift: 70 seconds in each direction. */
+/* Gentle title-only drift: 25 seconds in each direction. */
 body[data-screen="title"]::before{
   inset:-12px -5vw;
-  animation:title-background-drift 70s ease-in-out infinite alternate;
+  animation:title-background-drift 25s ease-in-out infinite alternate;
 }
 @keyframes title-background-drift{
   from{transform:translateX(-2vw)}

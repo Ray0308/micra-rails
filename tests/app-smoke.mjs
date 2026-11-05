@@ -111,4 +111,11 @@ for(const world of ['grass','mine','nether']){
  await new Promise(resolve=>setTimeout(resolve,950));el('reward-next').onclick();
  assert.equal(document.body.dataset.screen,'game');
 }
-console.log('PASS: all four world menus and operations, grass brake, Nether supply, rewards/world persistence, options, and sequential progression');
+el('back-title').onclick();enterWorld('end');
+const deathStage=el('stage-number').textContent;
+function explodeCart(){el('start').onclick();el('start').onclick();for(let i=0;i<110;i++){frame(testClock);testClock+=100}}
+explodeCart();assert.equal(el('overlay').hidden,false);
+assert.equal(el('result-title').textContent,'YOUdead!');assert.equal(el('result-text').textContent,'クリーパーに爆破された');
+el('again').onclick();assert.equal(el('overlay').hidden,true);assert.equal(el('stage-number').textContent,deathStage);assert.equal(el('moves').textContent,'0 手');assert.equal(el('start').disabled,false);
+explodeCart();el('death-title').onclick();assert.equal(document.body.dataset.screen,'title');assert.equal(el('overlay').hidden,true);
+console.log('PASS: four worlds, rewards, options, continuous motion, death screen respawn and return to title');

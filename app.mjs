@@ -191,7 +191,7 @@ $('start').onclick=()=>{
   }else return;
   render();
 };
-$('reset').onclick=()=>{tone(300,.12);reset()};$('again').onclick=()=>{tone(300,.12);reset()};
+$('reset').onclick=()=>{tone(300,.12);reset()};$('again').onclick=()=>{tone(300,.12);reset();$('start').focus({preventScroll:true})};
 $('pause').onclick=()=>{tone(paused?520:260,.12);paused=!paused;last=null;if(paused)stopFuseSound();else if(motion.fuse>0&&!brakeFreezesWorld())beginFuseSound();render()};
 $('sound').onclick=()=>setSound(!audio.settings.enabled);
 document.addEventListener('visibilitychange',()=>{
@@ -203,9 +203,10 @@ document.addEventListener('visibilitychange',()=>{
 function finish(win){
   stopFuseSound();
   if(win){tone(850,.25);render();collectionUI.beginReward(runId,state.level,state.world);journey.complete(state.level);return;}
-  $('overlay').hidden=false;$('result-icon').textContent=win?'🏡':'💥';
-  $('result-title').textContent=win?'にげきった！':'ドカーン！';
-  $('result-text').textContent=win?`${state.moves}回のスライドで、駅に到着。`:'次はどこにつなごう？ もう一度チャレンジ。';
+  $('overlay').hidden=false;
+  $('result-title').textContent='YOUdead!';
+  $('result-text').textContent='クリーパーに爆破された';
+  $('again').focus({preventScroll:true});
   if(!win)$('board').classList.add('boom');
   audio.explode();render();
 }
@@ -252,6 +253,7 @@ $('open-guide').onclick=()=>collectionUI.openCollection('title');
 $('open-options').onclick=()=>{audio.unlock();renderAudioOptions();showScreen('options')};
 $('options-done').onclick=()=>showScreen('title');
 $('back-title').onclick=()=>showScreen('title');
+$('death-title').onclick=()=>{tone(300,.12);$('overlay').hidden=true;showScreen('title')};
 document.querySelectorAll('[data-back-title]').forEach(button=>button.onclick=()=>showScreen('title'));
 renderAudioOptions();renderActorImage('steve');renderActorImage('creeper');
 const pendingWorld=collectionUI.pendingWorld();

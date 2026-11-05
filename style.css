@@ -76,8 +76,15 @@ button.tile.locked,.play-console button.tile.locked:hover{background:linear-grad
 .play-console .actions .primary:disabled{background:#46493f;color:#7e8274;box-shadow:inset 1px 1px #636859,inset -1px -1px #292e23}
 .game-options{display:flex;align-items:center;justify-content:center;min-height:24px;margin:5px 0 0;color:#989f88;font-size:10px}
 #moves{font:10px ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:2px;text-shadow:0 1px #181c11}
-#overlay{position:absolute;inset:6px;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:#151810f2;box-shadow:inset 0 0 0 1px #888e71}
-#result-icon{font-size:52px}#overlay h2{font-size:28px;color:#ece4c7;text-shadow:2px 2px #000;margin:14px 0}#overlay p{font-size:13px;line-height:1.8;color:#c2c8ad}#overlay button{width:min(280px,100%);margin-top:14px;font-size:16px}
+#overlay{position:fixed;inset:0;z-index:45;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;background:linear-gradient(#702421a6,#7d1c18b8);color:#fff;text-shadow:2px 2px #35100e;}
+#overlay h2{font:900 clamp(36px,9vw,64px)/1.15 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:-2px;color:#fff;text-shadow:3px 4px #391513;margin:0 0 20px}
+#overlay p{font-size:clamp(13px,3.5vw,18px);line-height:1.6;color:#fff;margin:0}
+.death-actions{display:grid;gap:12px;width:min(420px,88vw);margin-top:clamp(42px,10svh,90px)}
+.play-console #overlay button{width:100%;min-height:52px;margin:0;padding:12px 10px;border:2px solid #171717;background:linear-gradient(#92928f,#777773);box-shadow:inset 2px 2px #c4c4bc,inset -2px -2px #4e4e4a;color:#fff;font-size:clamp(15px,4vw,20px);letter-spacing:1px;text-shadow:2px 2px #363630}
+.play-console #overlay button:hover,.play-console #overlay button:focus-visible{background:#9797ad;box-shadow:inset 2px 2px #d5d5e1,inset -2px -2px #565669;outline:2px solid #ddd;outline-offset:1px}
+.play-console #overlay button:active{background:#71717e;transform:translateY(1px)}
+@media(orientation:landscape) and (max-height:440px){#overlay h2{margin-bottom:10px;font-size:38px}.death-actions{margin-top:22px;gap:8px}.play-console #overlay button{min-height:42px;padding:8px}}
+
 .boom{animation:shake .12s 5}
 
 /* Character cutouts remain vivid and move above the tiles. */

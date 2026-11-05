@@ -104,18 +104,18 @@ function positionActors(){
 }
 
 function railArtwork(type,key){
- // One block = 16 pixels, matching the scale of classic block textures.
+ // A finer pixel grid keeps the rails slim while preserving full-edge connections.
  const dirs=ports[type],rects=[];
- const rayDistance=(x,y,d)=>{const [ex,ey]=[[8,0],[16,8],[8,16],[0,8]][d];const ax=Math.min(8,ex),bx=Math.max(8,ex),ay=Math.min(8,ey),by=Math.max(8,ey);return Math.max(Math.max(ax-x,0,x-bx),Math.max(ay-y,0,y-by));};
- for(let y=0;y<16;y++)for(let x=0;x<16;x++){
+ const rayDistance=(x,y,d)=>{const [ex,ey]=[[16,0],[32,16],[16,32],[0,16]][d];const ax=Math.min(16,ex),bx=Math.max(16,ex),ay=Math.min(16,ey),by=Math.max(16,ey);return Math.max(Math.max(ax-x,0,x-bx),Math.max(ay-y,0,y-by));};
+ for(let y=0;y<32;y++)for(let x=0;x<32;x++){
   const px=x+.5,py=y+.5,dist=Math.min(...dirs.map(d=>rayDistance(px,py,d)));
   let fill=null;
-  const sleeper=dirs.some(d=>{const along=[8-py,px-8,py-8,8-px][d],across=d%2?Math.abs(py-8):Math.abs(px-8);return along>=0&&across<6&&(Math.floor(along)%5<2);});
+  const sleeper=dirs.some(d=>{const along=[16-py,px-16,py-16,16-px][d],across=d%2?Math.abs(py-16):Math.abs(px-16);return along>=0&&across<8&&(Math.floor(along)%8<2);});
   if(sleeper)fill=(x+y)%5===0?'#b58a52':(x*3+y)%4===0?'#695034':'#92703f';
-  if(dist>=2&&dist<4)fill=dist<3?((x+y)%7===0?'#aaa99b':'#d0cfc0'):((x+y)%5===0?'#77796e':'#8f9387');
+  if(dist>=4&&dist<6)fill=dist<5?((x+y)%7===0?'#aaa99b':'#d0cfc0'):((x+y)%5===0?'#77796e':'#8f9387');
   if(fill)rects.push(`<rect x="${x}" y="${y}" width="1" height="1" fill="${fill}"/>`);
  }
- return `<svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">${rects.join('')}</svg>`;
+ return `<svg viewBox="0 0 32 32" aria-hidden="true" shape-rendering="crispEdges">${rects.join('')}</svg>`;
 }
 function render(){
  if(!state)return;

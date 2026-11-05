@@ -37,7 +37,8 @@ export const CHARACTERS=[
     "category": "friends",
     "color": "#749b4a",
     "skin": "#edb48a",
-    "fact": "オレンジ色の髪が目じるしの冒険者。道具を使って、いろいろなものをつくるよ。"
+    "fact": "オレンジ色の髪が目じるしの冒険者。道具を使って、いろいろなものをつくるよ。",
+    "image": "assets/cards/alex.png"
   },
   {
     "id": "villager",
@@ -90,7 +91,8 @@ export const CHARACTERS=[
     "category": "animals",
     "color": "#c08a58",
     "skin": "#d5b18b",
-    "fact": "村などで会えるどうぶつ。魚をあげてなかよくなると、あとをついてくるよ。"
+    "fact": "村などで会えるどうぶつ。魚をあげてなかよくなると、あとをついてくるよ。",
+    "image": "assets/cards/cat.png"
   },
   {
     "id": "creeper",

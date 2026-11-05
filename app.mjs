@@ -1,4 +1,4 @@
-import {createCatalogUI} from './catalog-ui.mjs?v=0.1.7';
+import {createCatalogUI} from './catalog-ui.mjs?v=0.1.8';
 import {create,slide,start,ports,neighbor} from './engine.mjs?v=0.1.4';
 import {createMotion,updateMotion,sampleRoute} from './motion.mjs?v=0.1.4';
 

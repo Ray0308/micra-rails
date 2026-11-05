@@ -1,4 +1,4 @@
-import {nextStep,advance} from './engine.mjs?v=0.1.3';
+import {nextStep,advance} from './engine.mjs?v=0.1.4';
 
 export function createMotion(state){
   return {elapsed:0,route:[state.a],aDistance:0,bDistance:null,segment:null,fuse:0,movingA:false,movingB:false};

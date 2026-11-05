@@ -55,3 +55,8 @@ body[data-screen="title"]::before{
 
 .version-badge{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));z-index:50;padding:5px 9px;border:1px solid #ffffff40;background:#101b16b3;color:#f0f3e8;font:12px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;border-radius:3px;pointer-events:none;text-shadow:0 1px 2px #000}
 #game-screen{padding-top:46px}
+
+/* Use the supplied character illustrations; blend away their white backdrop. */
+img.character-asset{image-rendering:auto;mix-blend-mode:multiply;filter:none;pointer-events:none}
+img.character-steve{width:78%;height:90%;left:11%;top:3%;z-index:4}
+img.character-creeper{width:46%;height:75%;left:27%;top:1%}

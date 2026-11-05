@@ -6,8 +6,8 @@ export function cleanAudioSettings(value){
 
 // Separate master, music, and effect buses. Context creation always follows a user gesture.
 export function createAudioController({storage,Context=globalThis.AudioContext||globalThis.webkitAudioContext,schedule=setInterval,cancel=clearInterval}={}){
- let settings=cleanAudioSettings(),context,master,music,effects,timer=null,visible=true,unlocked=false,disposed=false,nextTime=0,step=0;
- const musicVoices=new Set(),hisses=new Set();
+ let settings=cleanAudioSettings(),context,master,music,effects,timer=null,visible=true,unlocked=false,disposed=false,nextTime=0,step=0,scene='title',visibilityTask=Promise.resolve();
+ const musicVoices=new Set(),hisses=new Set(),effectBuffers=new Map();
  function stopHisses(){for(const stop of [...hisses])stop()}
  try{const raw=storage?.getItem(AUDIO_KEY);if(raw)settings=cleanAudioSettings(JSON.parse(raw))}catch{}
  function save(){try{storage?.setItem(AUDIO_KEY,JSON.stringify(settings))}catch{}}
@@ -36,7 +36,19 @@ export function createAudioController({storage,Context=globalThis.AudioContext||
  function note(midi,time,duration,strength=.16){voice(440*2**((midi-69)/12),time,duration,strength,music,true)}
  function fillMusic(){
   if(!context||!visible||!settings.enabled||settings.bgm===0)return;
-  // An original soft melody, replaceable with a recorded BGM later.
+  if(scene==='game'){
+   const pulse=[50,57,62,57,50,58,62,57,48,55,60,55,46,53,58,53],bass=[38,38,36,34];
+   if(nextTime<context.currentTime)nextTime=context.currentTime+.03;
+   while(nextTime<context.currentTime+.22){
+    const i=step%pulse.length;
+    if(i%4===0)note(bass[Math.floor(i/4)],nextTime,.75,.12);
+    note(pulse[i],nextTime,.19,i%4===0?.14:.10);
+    if(i%8===6)note(pulse[i]+12,nextTime,.32,.065);
+    nextTime+=.24;step++;
+   }
+   return;
+  }
+  // Keep the original title melody unchanged.
   const melody=[64,null,67,null,69,67,null,64,62,null,64,null,67,64,null,62,60,null,64,null,67,64,null,60,62,null,67,null,69,67,null,62];
   const roots=[48,45,41,43];
   if(nextTime<context.currentTime)nextTime=context.currentTime+.03;
@@ -71,10 +83,43 @@ export function createAudioController({storage,Context=globalThis.AudioContext||
  }
  return {
   get settings(){return {...settings}},
+  get scene(){return scene},
+  setScene(value){const next=value==='game'?'game':'title';if(scene===next)return;scene=next;stopMusic();sync()},
   setEnabled(enabled){settings.enabled=Boolean(enabled);save();sync()},
   setVolume(channel,value){if(!['bgm','sfx'].includes(channel))return;settings=cleanAudioSettings({...settings,[channel]:Number(value)});save();sync()},
   unlock,
-  setVisible(value){visible=Boolean(value);sync();if(!visible)context?.suspend()?.catch?.(()=>{});else if(unlocked&&settings.enabled)context?.resume()?.catch?.(()=>{})},
+  setVisible(value){
+   visible=Boolean(value);sync();
+   // Serialize suspend/resume: a late background suspend must not silence the foreground.
+   visibilityTask=visibilityTask.catch(()=>{}).then(async()=>{
+    if(!context||disposed)return;
+    if(!visible){await context.suspend();return;}
+    if(unlocked&&settings.enabled){
+     await context.resume();
+     if(visible&&!disposed){stopMusic();sync();}
+    }
+   });
+   return visibilityTask.catch(()=>{});
+  },
+  effect(kind='click'){
+   if(!settings.enabled||settings.sfx===0||!visible||!unlock())return;
+   const mining=kind==='mine',length=mining?.14:.042,key=mining?'mine':'click';
+   let buffer=effectBuffers.get(key);
+   if(!buffer){
+    buffer=context.createBuffer(1,Math.ceil(context.sampleRate*length),context.sampleRate);
+    const samples=buffer.getChannelData(0);let previous=0;
+    for(let i=0;i<samples.length;i++){
+     const t=i/context.sampleRate,noise=Math.random()*2-1;
+     const grain=noise-previous;previous=noise;
+     const body=mining?Math.sin(2*Math.PI*430*t)*Math.exp(-t*48)+.38*Math.sin(2*Math.PI*1170*t)*Math.exp(-t*80):Math.sin(2*Math.PI*1200*t)*Math.exp(-t*210);
+     const tap=grain*Math.exp(-t*(mining?100:320));
+     samples[i]=Math.min(1,t/.001)*(.32*body+.16*tap)*(1-t/length);
+    }
+    effectBuffers.set(key,buffer);
+   }
+   const source=context.createBufferSource();source.buffer=buffer;source.connect(effects);
+   source.onended=()=>source.disconnect();source.start(context.currentTime);source.stop(context.currentTime+length);
+  },
   tone(hz=300,duration=.08){
    if(!settings.enabled||settings.sfx===0||!visible||!unlock())return;
    voice(hz,context.currentTime,Math.max(.10,duration),.20,effects);

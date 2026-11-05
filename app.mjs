@@ -3,8 +3,8 @@ import {railArtwork} from './rail-art.mjs?v=0.4.4';
 import {renderTiles} from './tile-view.mjs?v=0.4.3';
 import {WORLDS,isWorld,loadWorld,saveWorld} from './worlds.mjs?v=0.3.1';
 import {createJourneyStore} from './journey.mjs?v=0.2.5';
-import {createAudioController} from './audio.mjs?v=0.4.1';
-import {createCatalogUI} from './catalog-ui.mjs?v=0.3.1';
+import {createAudioController} from './audio.mjs?v=0.4.6';
+import {createCatalogUI} from './catalog-ui.mjs?v=0.4.6';
 import {create,slide,start,ports,neighbor,canEdit,swap,rotate,build,removePlaced} from './engine.mjs?v=0.3.1';
 import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS} from './motion.mjs?v=0.3.1';
 
@@ -28,7 +28,7 @@ for(const key of ['steve','creeper','house']){
   image.src=key==='house'?'assets/station.svg?v=0.1.4':`assets/${key}.png?v=0.1.4`;
 }
 
-function tone(hz=300,duration=.08){audio.tone(hz,duration)}
+function tone(hz=300,duration=.08){if(duration>=.2)audio.tone(hz,duration);else audio.effect('click')}
 function stopFuseSound(){stopHiss?.();stopHiss=null}
 function beginFuseSound(){stopFuseSound();stopHiss=audio.hiss(Math.max(.1,(CREEPER_FUSE_MS-motion.fuse)/1000))}
 function renderAudioOptions(){
@@ -57,7 +57,13 @@ $('sfx-volume').addEventListener('change',()=>tone(440,.12));
 document.addEventListener('pointerdown',()=>audio.unlock(),{capture:true,passive:true});
 document.addEventListener('keydown',()=>audio.unlock(),{capture:true});
 document.addEventListener('touchend',()=>audio.unlock(),{capture:true,passive:true});
-document.addEventListener('click',()=>audio.unlock(),{capture:true});
+document.addEventListener('click',e=>{
+ audio.unlock();
+ const id=e.target?.closest?.('button')?.id;
+ if(['play-game','open-guide','open-options','world-back','options-done','back-title','catalog-back','detail-close','reward-next','reward-title'].includes(id))audio.effect('click');
+},{capture:true});
+window.addEventListener('pageshow',()=>{if(!document.hidden)void audio.setVisible(true)});
+window.addEventListener('focus',()=>{if(!document.hidden)void audio.setVisible(true)});
 
 function renderActorImage(key){
   if(!actors[key])return;
@@ -222,6 +228,7 @@ const screenIds={title:'title-screen',game:'game-screen',guide:'guide-screen',op
 function showScreen(name){
   if(name!=='game'&&state.status==='running'){paused=true;last=null;stopFuseSound();render()}
   document.body.dataset.screen=name;
+  audio.setScene(name==='game'?'game':'title');
   for(const [key,id] of Object.entries(screenIds))$(id).hidden=key!==name;
   window.scrollTo(0,0);
   if(name==='game'){measureBoard();positionActors()}
@@ -230,7 +237,7 @@ function showScreen(name){
 }
 let collectionStorage;
 try{collectionStorage=window.localStorage}catch{}
-collectionUI=createCatalogUI({showScreen,playTone:tone,storage:collectionStorage,audioSettings:()=>audio.settings,onContinue:(level,world)=>{
+collectionUI=createCatalogUI({showScreen,playTone:tone,playMining:()=>audio.effect('mine'),storage:collectionStorage,audioSettings:()=>audio.settings,onContinue:(level,world)=>{
   if(isWorld(world)){selectedWorld=world;saveWorld(audioStorage,world)}
   journey.complete(level);reset();showScreen('game');
 }});

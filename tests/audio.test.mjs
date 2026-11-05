@@ -13,7 +13,7 @@ function fixture(storage=memory()){
   createBuffer(channels,length,rate){const samples=new Float32Array(length);return {getChannelData:()=>samples,length,sampleRate:rate}}
   createBufferSource(){const n=new Node();n.start=()=>n.started=true;n.stop=time=>{if(time===undefined){n.stoppedNow=true;n.onended?.()}else n.scheduledStop=time};this.noises.push(n);return n}
   createBiquadFilter(){const n=new Node();n.frequency={value:0};return n}
-  resume(){this.resumes++;return Promise.resolve()}suspend(){this.suspends++;return Promise.resolve()}close(){this.closed=true;return Promise.resolve()}
+  resume(){this.resumes++;this.state='running';return Promise.resolve()}suspend(){this.suspends++;return Promise.resolve()}close(){this.closed=true;return Promise.resolve()}
  }
  const audio=createAudioController({storage,Context,schedule:fn=>{const id=++timerId;jobs.set(id,fn);return id},cancel:id=>jobs.delete(id)});
  return {audio,storage,instances,jobs};
@@ -53,10 +53,10 @@ test('master OFF silences every bus, stops music scheduling, and reuses the cont
  f.audio.setEnabled(true);f.audio.unlock();assert.equal(f.instances.length,1);assert.equal(f.jobs.size,1);f.audio.dispose();
 });
 
-test('hidden pages suspend audio and do not emit effects',()=>{
+test('hidden pages suspend audio and do not emit effects',async()=>{
  const f=fixture();f.audio.setEnabled(true);f.audio.unlock();const ctx=f.instances[0];
- f.audio.setVisible(false);const count=ctx.noises.length;f.audio.tone();assert.equal(ctx.noises.length,count);assert.equal(ctx.gains[0].gain.value,0);assert.equal(f.jobs.size,0);assert.equal(ctx.suspends,1);
- f.audio.setVisible(true);assert.equal(ctx.gains[0].gain.value,1);assert.equal(f.jobs.size,1);f.audio.dispose();assert.equal(f.jobs.size,0);assert.ok(ctx.closed);
+ await f.audio.setVisible(false);const count=ctx.noises.length;f.audio.tone();assert.equal(ctx.noises.length,count);assert.equal(ctx.gains[0].gain.value,0);assert.equal(f.jobs.size,0);assert.equal(ctx.suspends,1);
+ await f.audio.setVisible(true);assert.equal(ctx.gains[0].gain.value,1);assert.equal(f.jobs.size,1);f.audio.dispose();assert.equal(f.jobs.size,0);assert.ok(ctx.closed);
 });
 
 test('unavailable storage and unsupported audio do not break menu settings',()=>{
@@ -92,4 +92,34 @@ test('mobile audio interruption can restart music scheduling after context resum
  const before=ctx.noises.length;ctx.currentTime=30;ctx.state='running';ctx.onstatechange();
  assert.ok(ctx.noises.length>before);assert.equal(f.jobs.size,1);
  f.audio.dispose();
+});
+
+
+test('game soundtrack changes tempo and title soundtrack returns unchanged',()=>{
+ const f=fixture();f.audio.setEnabled(true);f.audio.unlock();const ctx=f.instances[0];
+ const original=Array.from(ctx.noises[0].buffer.getChannelData(0));
+ f.audio.setScene('game');assert.equal(f.audio.scene,'game');
+ const game=ctx.noises.at(-1).buffer;assert.ok(game.length<ctx.sampleRate*.3);
+ f.audio.setScene('title');assert.equal(f.audio.scene,'title');
+ assert.deepEqual(Array.from(ctx.noises.at(-2).buffer.getChannelData(0)),original);
+ assert.equal(f.jobs.size,1);f.audio.dispose();
+});
+
+test('click and stone mining use distinct cached percussion buffers and obey mute',()=>{
+ const f=fixture();f.audio.setVolume('bgm',0);f.audio.setEnabled(true);f.audio.effect('click');const ctx=f.instances[0],click=ctx.noises.at(-1);
+ assert.equal(click.connectedTo,ctx.gains[2]);assert.ok(click.buffer.length<ctx.sampleRate*.05);
+ f.audio.effect('mine');const mining=ctx.noises.at(-1);assert.ok(mining.buffer.length>click.buffer.length*3);
+ assert.ok(mining.buffer.getChannelData(0).some(v=>Math.abs(v)>.1));
+ f.audio.effect('click');assert.equal(ctx.noises.at(-1).buffer,click.buffer);
+ const count=ctx.noises.length;f.audio.setVolume('sfx',0);f.audio.effect('mine');assert.equal(ctx.noises.length,count);f.audio.dispose();
+});
+
+test('foreground recovery waits for an unfinished background suspend before resuming',async()=>{
+ const f=fixture();f.audio.setEnabled(true);f.audio.unlock();f.audio.setScene('game');const ctx=f.instances[0];
+ let finishSuspend;ctx.suspend=()=>new Promise(resolve=>{finishSuspend=()=>{ctx.state='suspended';resolve()}});
+ const background=f.audio.setVisible(false);await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(typeof finishSuspend,'function');
+ const foreground=f.audio.setVisible(true);finishSuspend();await background;await foreground;
+ assert.equal(ctx.state,'running');assert.equal(ctx.gains[0].gain.value,1);assert.equal(f.jobs.size,1);assert.equal(f.audio.scene,'game');
+ f.audio.effect('click');assert.ok(ctx.noises.at(-1).started);f.audio.dispose();
 });

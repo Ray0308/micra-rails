@@ -4,7 +4,7 @@ import {createCollectionStore} from './catalog-model.mjs?v=0.3.1';
 const REVIEW_UNLOCK_ALL=true;
 const $=id=>document.getElementById(id);
 
-export function createCatalogUI({showScreen,playTone,onContinue,storage,audioSettings=()=>({enabled:true,sfx:100})}){
+export function createCatalogUI({showScreen,playTone,playMining=()=>playTone(250,.08),onContinue,storage,audioSettings=()=>({enabled:true,sfx:100})}){
  const store=createCollectionStore(storage);
  if(REVIEW_UNLOCK_ALL)store.unlockForReview();
  let category='friends',page=0,returnTo='title',detail=null,detailShiny=false,openingTimer;
@@ -143,7 +143,7 @@ export function createCatalogUI({showScreen,playTone,onContinue,storage,audioSet
  $('mine-block').onclick=()=>{
   const before=store.state.reward;if(!before||before.phase!=='mining')return;
   const r=store.tapBlock();renderCracks(r.hits);saveWarning();
-  playTone(180+r.hits*35,.045);
+  playMining();
   $('block-cube').animate?.([{transform:'rotateX(-18deg) rotateY(-28deg) translateY(0)'},{transform:'rotateX(-15deg) rotateY(-24deg) translateY(5px)'},{transform:'rotateX(-18deg) rotateY(-28deg) translateY(0)'}],{duration:140});
   if(r.phase==='revealed'){renderReward();playTone(r.shiny?1000:750,.25)}
  };

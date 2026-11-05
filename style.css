@@ -319,8 +319,8 @@ body[data-world] .queue-piece{background:var(--floor-color) var(--floor-texture)
 /* White studio-logo screen; preload progress remains available to screen readers. */
 body.booting> :not(.boot-screen):not(.version-badge){visibility:hidden}
 .boot-screen{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:#fff;color:#102c4c;padding:24px}
-.boot-brand{width:min(640px,88vw);opacity:0;transition:opacity .7s ease-in-out}
+.boot-brand{width:min(640px,88vw);opacity:0;transition:opacity 1.2s ease-in-out}
 .boot-brand img{display:block;width:100%;max-height:76svh;object-fit:contain;user-select:none;-webkit-user-drag:none}
 .boot-screen.logo-ready .boot-brand{opacity:1}
-.boot-screen.is-leaving .boot-brand{opacity:0;transition-duration:.6s}
+.boot-screen.is-leaving .boot-brand{opacity:0;transition-duration:1.2s}
 @media(prefers-reduced-motion:reduce){.boot-brand{transition:none}}

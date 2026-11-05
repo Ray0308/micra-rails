@@ -1,4 +1,4 @@
-export const STUDIO_LOGO='assets/ray-edu-labo.png?v=0.5.0';
+export const STUDIO_LOGO='assets/ray-edu-labo.png?v=0.5.1';
 export const STARTUP_ASSETS=[
  STUDIO_LOGO,
  'assets/rail-straight-v044.png','assets/rail-curve-v044.png','assets/rail-cross-v044.png',
@@ -25,7 +25,7 @@ export async function preloadImages(urls,{onProgress=()=>{},onAsset=()=>{},concu
  }));
  return results;
 }
-export async function runStartup({document=globalThis.document,minDuration=1700,maxDuration=15000,fadeDuration=600,...imageOptions}={}){
+export async function runStartup({document=globalThis.document,minDuration=3300,maxDuration=15000,fadeDuration=1200,...imageOptions}={}){
  const splash=document.getElementById('boot-screen'),label=document.getElementById('boot-status');
  let logoHold=Promise.resolve(),deadline;
  const loading=preloadImages(STARTUP_ASSETS,{...imageOptions,onAsset:result=>{

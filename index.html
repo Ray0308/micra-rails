@@ -1,8 +1,31 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#172b25"><title>マイクラレールズ — トロッコでにげろ！</title><link rel="stylesheet" href="style.css?v=20261105-bg"></head>
-<body><main>
-<header><a class="brand" href="./">▦ BLOCK PLAY LAB <span>PROTOTYPE 01</span></a><button id="sound" class="icon" aria-label="効果音を切り替える">音 OFF</button></header>
-<section class="title"><p class="eyebrow">SLIDE / ESCAPE / BOOM!</p><h1 class="logo-title"><img src="assets/title-logo.jpg" alt="マイクラレールズ" width="1024" height="411"></h1><p>マイクラレールズ — レールをつないで、にげきれ。</p></section>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#172b25"><title>マイクラレールズ — トロッコでにげろ！</title><link rel="stylesheet" href="style.css?v=20261105-title"></head>
+<body data-screen="title">
+<section id="title-screen" class="menu-screen" aria-label="タイトル画面">
+  <div class="title-logo"><h1><img src="assets/title-logo.jpg" alt="マイクラレールズ" width="1024" height="411"></h1></div>
+  <nav class="title-menu" aria-label="メインメニュー">
+    <button id="play-game" class="mc-button">はじめる</button>
+    <button id="open-guide" class="mc-button">図鑑</button>
+    <button id="exit-game" class="mc-button">終了</button>
+  </nav>
+  <p class="title-footer">マイクラレールズ <span>トロッコでにげろ！</span></p>
+</section>
+<section id="guide-screen" class="menu-screen secondary-screen" aria-labelledby="guide-title" hidden>
+  <div class="menu-panel"><h1 id="guide-title">図鑑</h1><p class="panel-intro">キャラクターとレールのひみつ</p>
+    <div class="encyclopedia">
+      <article><span class="dex-art dex-steve" aria-hidden="true">▣</span><div><h2>スティーブのトロッコ</h2><p>つながったレールを自動で走る。レールが途切れると止まるよ。駅までにがしてあげよう！</p></div></article>
+      <article><span class="dex-art dex-creeper" aria-hidden="true">▥</span><div><h2>クリーパーのトロッコ</h2><p>スティーブの通った道を追いかける。追いつくと「シュー……ボン！」。爆発する前にはなれよう。</p></div></article>
+      <article><span class="dex-art" aria-hidden="true">═</span><div><h2>レールパネル</h2><p>空きマスのとなりのパネルをスライド。通ったパネルは固定され、同じ道にはもう入れない。</p></div></article>
+      <article><span class="dex-art" aria-hidden="true">╬</span><div><h2>十字レール</h2><p>曲がらず、まっすぐ進むレール。固定されても、まだ通っていない方向から一度だけ横切れる。</p></div></article>
+    </div><button class="mc-button" data-back-title>タイトルへ</button>
+  </div>
+</section>
+<section id="exit-screen" class="menu-screen secondary-screen" aria-labelledby="exit-title" hidden>
+  <div class="menu-panel exit-panel"><h1 id="exit-title">またあそぼう！</h1><p>このタブを閉じると終了できます。</p><button class="mc-button" data-back-title>タイトルへ</button></div>
+</section>
+<main id="game-screen" hidden>
+<header><button id="back-title" class="back-title">‹ タイトル</button><span class="game-name">マイクラレールズ</span><button id="sound" class="icon" aria-label="効果音を切り替える">音 OFF</button></header>
+
 <section class="game"><div class="toolbar"><label>ステージ <select id="level"><option value="0">01 はじめの脱出</option><option value="1">02 道をとりもどせ</option><option value="2">03 まわり道</option></select></label><span id="moves">0 MOVES</span></div>
 <div class="board-wrap"><div id="board" role="group" aria-label="道のスライドパズル"></div><div id="overlay" hidden><div id="result-icon"></div><h2 id="result-title"></h2><p id="result-text"></p><button id="again">もういちど</button></div></div>
 <div class="status"><span id="lamp"></span><p id="message" role="status" aria-live="polite">空いているマスへ、レールをスライドしよう。</p></div>
@@ -10,4 +33,4 @@
 <label class="pace">追いかける速さ <select id="pace"><option value="easy">ゆっくり</option><option value="normal">ふつう</option></select></label></section>
 <section class="guide"><div><b>01 / つなぐ</b><p>空きマスのとなりをタップ、またはスワイプ。パネルは回転できない。</p></div><div><b>02 / 先をよむ</b><p>通ったレールは固定されて動かせない。十字だけは、別方向にもう一度通れる。</p></div><div><b>03 / にげる</b><p>クリーパーは足あとを追う。追いつかれる前に、右下の駅へ！</p></div></section>
 <footer>個人用ファンゲーム試作 · キャラクターは仮表示 / 画像差し替え対応</footer>
-</main><script type="module" src="app.mjs"></script></body></html>
+</main><script type="module" src="app.mjs?v=20261105-title"></script></body></html>

@@ -9,7 +9,22 @@ export function create(level=0){
  for(const i of sequences[level%3]) slide(s,i);
  s.moves=0; return s;
 }
-export function slide(s,i){const gap=s.tiles.indexOf(null),t=s.tiles[i];if(!['ready','running'].includes(s.status)||!t||t.used.length||i===0||i===15||!ports.cross.some(d=>neighbor(gap,d)===i))return false;s.tiles[gap]=t;s.tiles[i]=null;s.moves++;return true}
+export function slide(s,i){const gap=s.tiles.indexOf(null),t=s.tiles[i];if(!['ready','running'].includes(s.status)||!t||t.used.length||i===0||i===15||i===s.reserved||!ports.cross.some(d=>neighbor(gap,d)===i))return false;s.tiles[gap]=t;s.tiles[i]=null;s.moves++;return true}
 export function start(s){if(s.status!=='ready')return;s.status='running';s.tiles[0].used.push('h')}
-export function advance(s){if(s.status!=='running')return false;const t=s.tiles[s.a],p=ports[t.type];if(!p.includes(s.entry))return false;const out=t.type==='cross'?(s.entry+2)%4:p.find(d=>d!==s.entry);const j=neighbor(s.a,out),next=s.tiles[j],enter=(out+2)%4;if(j<0||!next||!ports[next.type].includes(enter))return false;const axis=enter%2?'h':'v';if(next.used.length&&(next.type!=='cross'||next.used.includes(axis)))return false;s.a=j;s.entry=enter;next.used.push(axis);s.trail.push(j);if(j===15)s.status='won';return true}
+export function nextStep(s){
+ if(s.status!=='running')return null;
+ const tile=s.tiles[s.a],p=ports[tile.type];
+ if(!p.includes(s.entry))return null;
+ const out=tile.type==='cross'?(s.entry+2)%4:p.find(d=>d!==s.entry);
+ const index=neighbor(s.a,out),next=s.tiles[index],entry=(out+2)%4;
+ if(index<0||!next||!ports[next.type].includes(entry))return null;
+ const axis=entry%2?'h':'v';
+ if(next.used.length&&(next.type!=='cross'||next.used.includes(axis)))return null;
+ return {index,entry,axis};
+}
+export function advance(s){
+ const step=nextStep(s);if(!step)return false;
+ s.a=step.index;s.entry=step.entry;s.tiles[s.a].used.push(step.axis);s.trail.push(s.a);
+ if(s.a===15)s.status='won';return true;
+}
 export function chase(s){if(s.status!=='running')return;s.bStep=Math.min(s.bStep+1,s.trail.length-1);s.b=s.trail[s.bStep]}

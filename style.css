@@ -60,3 +60,22 @@ body[data-screen="title"]::before{
 img.character-asset{image-rendering:auto;mix-blend-mode:multiply;filter:none;pointer-events:none}
 img.character-steve{width:78%;height:90%;left:11%;top:3%;z-index:4}
 img.character-creeper{width:46%;height:75%;left:27%;top:1%}
+
+/* Opaque cutouts on a stable, independent movement layer. */
+#actors{position:absolute;pointer-events:none;z-index:6;overflow:visible}
+.actor{position:absolute;transform:translate(-50%,-50%);pointer-events:none;--facing:1}
+.actor-steve{z-index:2}.actor-creeper{z-index:3}
+.actor-visual{position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;transform-origin:50% 86%}
+.actor-image{display:block;width:88%;height:96%;object-fit:contain;opacity:1;mix-blend-mode:normal;image-rendering:auto;filter:saturate(1.2) contrast(1.08) brightness(1.08) drop-shadow(0 3px 2px #0008);transform:scaleX(var(--facing));user-select:none;-webkit-user-drag:none}
+.actor-creeper .actor-image{width:66%;height:98%}
+.actor-steve.moving .actor-visual{animation:cart-rattle .18s linear infinite}
+.actor-creeper.moving .actor-visual{animation:creeper-walk .36s ease-in-out infinite}
+.actor-steve.moving .actor-visual::after{content:'';position:absolute;left:20%;bottom:8%;width:3px;height:3px;background:#dfc28c;border-radius:50%;box-shadow:5px 2px #b99760;animation:rail-dust .45s ease-out infinite;opacity:.7}
+.tile.reserved{outline:2px solid #d6c98a;outline-offset:-2px}
+.actor-creeper.fusing .actor-image{animation:creeper-fuse .18s steps(2,end) infinite}
+.actors-paused *{animation-play-state:paused!important}
+@keyframes cart-rattle{0%,100%{transform:translateY(0) rotate(-.5deg)}50%{transform:translateY(-1px) rotate(.5deg)}}
+@keyframes creeper-walk{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-3px) rotate(3deg)}}
+@keyframes rail-dust{from{opacity:.7;transform:translate(0,0)}to{opacity:0;transform:translate(-12px,4px)}}
+@keyframes creeper-fuse{to{filter:brightness(2) saturate(1.3) drop-shadow(0 0 5px #fff9)}}
+@media(prefers-reduced-motion:reduce){.actor-visual,.actor-visual::after{animation:none!important}}

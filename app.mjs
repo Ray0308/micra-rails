@@ -1,9 +1,13 @@
-import {createCatalogUI} from './catalog-ui.mjs?v=0.1.8';
+import {createAudioController} from './audio.mjs?v=0.2.3';
+import {createCatalogUI} from './catalog-ui.mjs?v=0.2.3';
 import {create,slide,start,ports,neighbor} from './engine.mjs?v=0.1.4';
 import {createMotion,updateMotion,sampleRoute} from './motion.mjs?v=0.1.4';
 
 const $=id=>document.getElementById(id);
-let state,motion,paused=false,last=null,sounding=false,audio,pointer,runId,collectionUI;
+let state,motion,paused=false,last=null,pointer,runId,collectionUI;
+let audioStorage;
+try{audioStorage=window.localStorage}catch{}
+const audio=createAudioController({storage:audioStorage});
 let metrics={width:0,height:0,gap:5};
 const assets={};
 const actors={steve:$('actor-steve'),creeper:$('actor-creeper')};
@@ -14,17 +18,32 @@ for(const key of ['steve','creeper','house']){
   image.src=key==='house'?'assets/station.svg?v=0.1.4':`assets/${key}.png?v=0.1.4`;
 }
 
-function tone(hz=300,duration=.08){
-  if(!sounding)return;
-  try{
-    audio??=new AudioContext();audio.resume();
-    const osc=audio.createOscillator(),gain=audio.createGain();
-    osc.type='square';osc.frequency.value=hz;
-    gain.gain.setValueAtTime(.035,audio.currentTime);
-    gain.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);
-    osc.connect(gain).connect(audio.destination);osc.start();osc.stop(audio.currentTime+duration);
-  }catch{}
+function tone(hz=300,duration=.08){audio.tone(hz,duration)}
+function renderAudioOptions(){
+  const settings=audio.settings;
+  $('sound-on').setAttribute('aria-pressed',String(settings.enabled));
+  $('sound-off').setAttribute('aria-pressed',String(!settings.enabled));
+  for(const [channel,id] of [['bgm','bgm'],['sfx','sfx']]){
+    $(id+'-volume').value=String(settings[channel]);
+    $(id+'-value').textContent=String(settings[channel]);
+    $(id+'-volume').setAttribute('aria-valuetext',settings[channel]+' / 100');
+    $(id+'-volume').style.setProperty('--volume',settings[channel]+'%');
+  }
+  $('sound').innerHTML=settings.enabled?'♪':'♪<span class="sound-off">×</span>';
+  $('sound').setAttribute('aria-label',settings.enabled?'サウンドをオフにする':'サウンドをオンにする');
+  $('sound').setAttribute('aria-pressed',String(settings.enabled));
 }
+function setSound(enabled){if(!enabled)window.speechSynthesis?.cancel();audio.setEnabled(enabled);audio.unlock();renderAudioOptions();if(enabled)tone(440,.08)}
+$('sound-on').onclick=()=>setSound(true);
+$('sound-off').onclick=()=>setSound(false);
+for(const channel of ['bgm','sfx']){
+  $(channel+'-volume').addEventListener('input',()=>{
+    audio.setVolume(channel,$(channel+'-volume').value);if(channel==='sfx'&&audio.settings.sfx===0)window.speechSynthesis?.cancel();audio.unlock();renderAudioOptions();
+  });
+}
+$('sfx-volume').addEventListener('change',()=>tone(440,.12));
+document.addEventListener('pointerdown',()=>audio.unlock(),{capture:true,passive:true});
+document.addEventListener('keydown',()=>audio.unlock(),{capture:true});
 
 function renderActorImage(key){
   if(!actors[key])return;
@@ -122,8 +141,9 @@ $('board').addEventListener('click',e=>{
 $('start').onclick=()=>{start(state);last=null;tone(650,.15);render()};
 $('reset').onclick=reset;$('again').onclick=reset;$('level').onchange=reset;
 $('pause').onclick=()=>{paused=!paused;last=null;render()};
-$('sound').onclick=()=>{sounding=!sounding;$('sound').innerHTML=sounding?'♪':'♪<span class="sound-off">×</span>';$('sound').setAttribute('aria-label',sounding?'効果音をオフにする':'効果音をオンにする');$('sound').setAttribute('aria-pressed',String(sounding));tone()};
+$('sound').onclick=()=>setSound(!audio.settings.enabled);
 document.addEventListener('visibilitychange',()=>{
+  audio.setVisible(!document.hidden);
   if(document.hidden&&state.status==='running'){paused=true;last=null;render()}
 });
 
@@ -147,7 +167,7 @@ function tick(now){
   requestAnimationFrame(tick);
 }
 
-const screenIds={title:'title-screen',game:'game-screen',guide:'guide-screen',exit:'exit-screen',reward:'reward-screen'};
+const screenIds={title:'title-screen',game:'game-screen',guide:'guide-screen',options:'options-screen',reward:'reward-screen'};
 function showScreen(name){
   if(name!=='game'&&state.status==='running'){paused=true;last=null;render()}
   document.body.dataset.screen=name;
@@ -159,13 +179,14 @@ function showScreen(name){
 }
 let collectionStorage;
 try{collectionStorage=window.localStorage}catch{}
-collectionUI=createCatalogUI({showScreen,playTone:tone,storage:collectionStorage,onContinue:level=>{
+collectionUI=createCatalogUI({showScreen,playTone:tone,storage:collectionStorage,audioSettings:()=>audio.settings,onContinue:level=>{
   $('level').value=String((level+1)%3);reset();showScreen('game');
 }});
 $('play-game').onclick=()=>{if(collectionUI.resumeReward())return;reset();showScreen('game')};
 $('open-guide').onclick=()=>collectionUI.openCollection('title');
-$('exit-game').onclick=()=>showScreen('exit');
+$('open-options').onclick=()=>{audio.unlock();renderAudioOptions();showScreen('options')};
+$('options-done').onclick=()=>showScreen('title');
 $('back-title').onclick=()=>showScreen('title');
 document.querySelectorAll('[data-back-title]').forEach(button=>button.onclick=()=>showScreen('title'));
-renderActorImage('steve');renderActorImage('creeper');
+renderAudioOptions();renderActorImage('steve');renderActorImage('creeper');
 reset();collectionUI.resumeReward();requestAnimationFrame(tick);

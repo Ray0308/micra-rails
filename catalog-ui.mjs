@@ -2,7 +2,7 @@ import {CATEGORIES,CHARACTERS,BY_ID,BREAK_HITS} from './catalog-data.mjs?v=0.1.8
 import {createCollectionStore} from './catalog-model.mjs?v=0.1.8';
 const $=id=>document.getElementById(id);
 
-export function createCatalogUI({showScreen,playTone,onContinue,storage}){
+export function createCatalogUI({showScreen,playTone,onContinue,storage,audioSettings=()=>({enabled:true,sfx:100})}){
  const store=createCollectionStore(storage);
  let category='friends',page=0,returnTo='title',detail=null,detailShiny=false,openingTimer;
  const dialog=$('card-dialog');
@@ -59,6 +59,7 @@ export function createCatalogUI({showScreen,playTone,onContinue,storage}){
   $('shiny-card').disabled=!state.shiny[c.id];
   $('normal-card').setAttribute('aria-pressed',String(!detailShiny));$('shiny-card').setAttribute('aria-pressed',String(detailShiny));
   $('read-card').hidden=!window.speechSynthesis;
+  $('read-card').disabled=!audioSettings().enabled||audioSettings().sfx===0;
   bindArt($('detail-card'));
  }
  function showDetails(id){
@@ -87,8 +88,8 @@ export function createCatalogUI({showScreen,playTone,onContinue,storage}){
  $('normal-card').onclick=()=>{detailShiny=false;renderDetails()};
  $('shiny-card').onclick=()=>{detailShiny=true;renderDetails()};
  $('read-card').onclick=()=>{
-  if(!detail||!window.speechSynthesis)return;
-  window.speechSynthesis.cancel();const c=BY_ID[detail],utterance=new SpeechSynthesisUtterance(c.name+'。'+c.fact);utterance.lang='ja-JP';utterance.rate=.85;window.speechSynthesis.speak(utterance);
+  if(!detail||!window.speechSynthesis||!audioSettings().enabled||audioSettings().sfx===0)return;
+  window.speechSynthesis.cancel();const c=BY_ID[detail],utterance=new SpeechSynthesisUtterance(c.name+'。'+c.fact);utterance.lang='ja-JP';utterance.rate=.85;utterance.volume=audioSettings().sfx/100;window.speechSynthesis.speak(utterance);
  };
  window.addEventListener('resize',()=>{if(document.body.dataset.screen==='guide')renderCollection()});
 

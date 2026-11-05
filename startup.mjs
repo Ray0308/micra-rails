@@ -1,4 +1,6 @@
+export const STUDIO_LOGO='assets/ray-edu-labo.png?v=0.5.0';
 export const STARTUP_ASSETS=[
+ STUDIO_LOGO,
  'assets/rail-straight-v044.png','assets/rail-curve-v044.png','assets/rail-cross-v044.png',
  'assets/steve.png?v=0.1.4','assets/creeper.png?v=0.1.4','assets/station.svg?v=0.1.4',
  'assets/title-logo-transparent.png','assets/background.jpg',
@@ -15,22 +17,23 @@ export function loadImage(src,{ImageClass=globalThis.Image,timeoutMs=10000}={}){
   image.onerror=()=>finish(false);image.src=src;
  });
 }
-export async function preloadImages(urls,{onProgress=()=>{},concurrency=4,...options}={}){
+export async function preloadImages(urls,{onProgress=()=>{},onAsset=()=>{},concurrency=4,...options}={}){
  const assets=[...new Set(urls)],results=[];let cursor=0,completed=0;
  onProgress(0,assets.length);
  await Promise.all(Array.from({length:Math.min(concurrency,assets.length)},async()=>{
-  while(cursor<assets.length){const src=assets[cursor++];results.push(await loadImage(src,options));onProgress(++completed,assets.length);}
+  while(cursor<assets.length){const src=assets[cursor++];const result=await loadImage(src,options);results.push(result);onAsset(result);onProgress(++completed,assets.length);}
  }));
  return results;
 }
-export async function runStartup({document=globalThis.document,minDuration=1000,maxDuration=15000}={}){
- const splash=document.getElementById('boot-screen'),progress=document.getElementById('boot-progress'),label=document.getElementById('boot-status');
- const minimum=new Promise(resolve=>setTimeout(resolve,minDuration));
- let deadline;
- await Promise.race([new Promise(resolve=>{deadline=setTimeout(resolve,maxDuration)}),Promise.all([minimum,preloadImages(STARTUP_ASSETS,{onProgress:(done,total)=>{
-  progress.value=done;progress.max=total;label.textContent=`読み込み中 ${done} / ${total}`;
- }})])]);
+export async function runStartup({document=globalThis.document,minDuration=1700,maxDuration=15000,fadeDuration=600,...imageOptions}={}){
+ const splash=document.getElementById('boot-screen'),label=document.getElementById('boot-status');
+ let logoHold=Promise.resolve(),deadline;
+ const loading=preloadImages(STARTUP_ASSETS,{...imageOptions,onAsset:result=>{
+  if(result.src===STUDIO_LOGO){splash.classList.add('logo-ready');logoHold=new Promise(resolve=>setTimeout(resolve,minDuration));}
+ },onProgress:(done,total)=>{label.textContent=`読み込み中 ${done} / ${total}`;}});
+ await Promise.race([new Promise(resolve=>{deadline=setTimeout(resolve,maxDuration)}),(async()=>{await loading;await logoHold;})()]);
  clearTimeout(deadline);
- // A missing image must not trap the player. Browser requests can retry on display.
+ splash.classList.add('is-leaving');
+ await new Promise(resolve=>setTimeout(resolve,fadeDuration));
  splash.hidden=true;document.body.classList.remove('booting');
 }

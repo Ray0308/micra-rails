@@ -201,3 +201,12 @@ body[data-screen="reward"]::after{background:radial-gradient(ellipse at 50% 42%,
 
 /* A touch must not turn the empty slot into a dirt tile or open a long-press callout. */
 #board{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+
+/* Personal edition badge and the classic angled yellow splash. */
+.title-logo{position:relative;overflow:visible}
+.title-edition{position:relative;margin:6px 0 4px;color:#f3f3ef;font:900 clamp(16px,3vw,32px)/1.1 'Arial Black',Impact,ui-monospace,monospace;letter-spacing:3px;text-align:center;text-shadow:-2px -2px #171717,2px -2px #171717,-2px 2px #171717,2px 2px #171717,0 4px #111}
+.title-splash{position:absolute;right:0;top:62%;z-index:2;display:block;transform:rotate(-18deg);transform-origin:50% 50%;pointer-events:none;white-space:nowrap;color:#ffef00;font:900 clamp(13px,3.2vw,28px)/1.1 'Courier New',ui-monospace,monospace;letter-spacing:-.5px;text-shadow:2px 2px #4a4100}
+.title-splash>span{display:block;animation:title-splash-pulse 1s ease-in-out infinite}
+@keyframes title-splash-pulse{0%,100%{transform:scale(.96)}50%{transform:scale(1.04)}}
+@media(orientation:landscape) and (max-height:520px){.title-edition{font-size:16px;margin:4px 0 2px}.title-splash{font-size:15px}}
+@media(prefers-reduced-motion:reduce){.title-splash>span{animation:none}}

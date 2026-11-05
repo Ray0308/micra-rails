@@ -28,15 +28,23 @@ const moved=parseFloat(el('actor-steve').style.left);
 assert.ok(moved>initial&&moved<initial+100,'actor must be between cells, not teleporting');
 el('pause').onclick();for(let i=41;i<=90;i++)frame(i*16);
 assert.equal(parseFloat(el('actor-steve').style.left),moved,'pause must freeze visual position');
+const pauseMoves=el('moves').textContent;slidePanel(6);assert.equal(el('moves').textContent,pauseMoves,'pause must lock rail editing');
 el('back-title').onclick();assert.equal(document.body.dataset.screen,'title');
 el('open-guide').onclick();assert.equal(document.body.dataset.screen,'guide');
 assert.ok(el('catalog-grid').innerHTML.includes('スティーブ'));
 el('catalog-back').onclick();assert.equal(document.body.dataset.screen,'title');
 el('play-game').onclick();
-const target={closest:()=>({dataset:{index:'6'}})};
-el('board').events.pointerdown({target,clientX:0,clientY:0});
-el('board').events.pointerup({clientX:0,clientY:0});
+function slidePanel(index){
+ const target={closest:()=>({dataset:{index:String(index)}})};
+ el('board').events.pointerdown({target,clientX:0,clientY:0});
+ el('board').events.pointerup({clientX:0,clientY:0});
+}
+slidePanel(6);
+assert.equal(el('moves').textContent,'0 手','rails must not move before departure');
+assert.ok(!/class="tile[^\"]* movable/.test(el('board').innerHTML),'ready rails must not appear movable');
 el('start').onclick();
+slidePanel(6);
+assert.equal(el('moves').textContent,'1 手','rails must move after departure');
 for(let time=2000;time<18000;time+=100)frame(time);
 assert.equal(document.body.dataset.screen,'reward','winning must lead to block mining');
 assert.equal(el('reward-screen').dataset.phase,'mining');

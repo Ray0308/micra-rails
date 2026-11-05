@@ -77,12 +77,12 @@ function render(){
   $('board').innerHTML=state.tiles.map((tile,i)=>{
     if(!tile)return '<div class="tile empty" aria-label="空きマス"></div>';
     const reserved=i===state.reserved;
-    const movable=!tile.used.length&&!reserved&&i!==0&&i!==15&&ports.cross.some(d=>neighbor(gap,d)===i);
+    const movable=state.status==='running'&&!paused&&!tile.used.length&&!reserved&&i!==0&&i!==15&&ports.cross.some(d=>neighbor(gap,d)===i);
     const lines=ports[tile.type].map(d=>{
       const [x,y]=[[50,0],[100,50],[50,100],[0,50]][d];
       return `<path d="M50 50 L${x} ${y}"/>`;
     }).join('');
-    return `<button data-index="${i}" class="tile ${tile.used.length?'locked':''} ${reserved?'reserved':''} ${movable?'movable':''}" aria-label="${Math.floor(i/4)+1}行${i%4+1}列 ${tile.type==='cross'?'十字':'レール'} ${tile.used.length?'固定':reserved?'進入中':movable?'移動できる':''}"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><mask id="rail-mask-${i}" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="black"/><g stroke="white" stroke-width="29" fill="none">${lines}</g><g stroke="black" stroke-width="19" fill="none">${lines}</g></mask><linearGradient id="rail-metal-${i}" x2="1" y2="1"><stop stop-color="#eee3c5"/><stop offset=".42" stop-color="#979b99"/><stop offset=".58" stop-color="#dedbcb"/><stop offset="1" stop-color="#666b6b"/></linearGradient></defs><g stroke="#342316" stroke-width="46" stroke-dasharray="9 11" fill="none">${lines}</g><g stroke="#916b42" stroke-width="40" stroke-dasharray="7 13" fill="none">${lines}</g><rect width="100" height="100" fill="url(#rail-metal-${i})" mask="url(#rail-mask-${i})"/></svg>${i===0?'<span class="badge">▶</span>':''}${i===15?(assets.house?`<img class="house-img" src="${assets.house}" alt="駅">`:'<span class="house">⌂</span>'):''}</button>`;
+    return `<button data-index="${i}" aria-disabled="${!movable}" tabindex="${movable?0:-1}" class="tile ${tile.used.length?'locked':''} ${reserved?'reserved':''} ${movable?'movable':''}" aria-label="${Math.floor(i/4)+1}行${i%4+1}列 ${tile.type==='cross'?'十字':'レール'} ${tile.used.length?'固定':reserved?'進入中':movable?'移動できる':''}"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><mask id="rail-mask-${i}" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="black"/><g stroke="white" stroke-width="29" fill="none">${lines}</g><g stroke="black" stroke-width="19" fill="none">${lines}</g></mask><linearGradient id="rail-metal-${i}" x2="1" y2="1"><stop stop-color="#eee3c5"/><stop offset=".42" stop-color="#979b99"/><stop offset=".58" stop-color="#dedbcb"/><stop offset="1" stop-color="#666b6b"/></linearGradient></defs><g stroke="#342316" stroke-width="46" stroke-dasharray="9 11" fill="none">${lines}</g><g stroke="#916b42" stroke-width="40" stroke-dasharray="7 13" fill="none">${lines}</g><rect width="100" height="100" fill="url(#rail-metal-${i})" mask="url(#rail-mask-${i})"/></svg>${i===0?'<span class="badge">▶</span>':''}${i===15?(assets.house?`<img class="house-img" src="${assets.house}" alt="駅">`:'<span class="house">⌂</span>'):''}</button>`;
   }).join('');
   $('moves').textContent=`${state.moves} 手`;
   $('start').disabled=state.status!=='ready';
@@ -91,15 +91,16 @@ function render(){
   $('pause').setAttribute('aria-label',paused?'つづける':'一時停止');
   $('pause').setAttribute('aria-pressed',String(paused));
   $('level').disabled=state.status==='running';
-  $('message').textContent=paused?'おやすみ中。つづけるボタンで再開。':state.status==='ready'?'レールを準備したらスタート！ 光るパネルを動かせるよ。':state.status==='won'?'脱出成功！':state.status==='lost'?'つかまった！ レールを変えて、もう一度。':motion.fuse?'シュー……！ はやく、はなれて！':motion.elapsed<5500?'トロッコが出発！ もうすぐクリーパーが来る。':'歩いて追いかけてきた！ 右下の駅までレールをつなごう。';
+  $('message').textContent=paused?'おやすみ中。つづけるボタンで再開。':state.status==='ready'?'出発でトロッコを走らせよう。':state.status==='won'?'脱出成功！':state.status==='lost'?'つかまった！ レールを変えて、もう一度。':motion.fuse?'シュー……！ はやく、はなれて！':motion.elapsed<5500?'トロッコが出発！ もうすぐクリーパーが来る。':'歩いて追いかけてきた！ 右下の駅までレールをつなごう。';
   positionActors();
 }
 
 function move(i){
-  if(paused)return;
+  if(state.status!=='running'||paused)return;
   if(slide(state,i)){tone(420);render()}else tone(120,.04);
 }
 $('board').addEventListener('pointerdown',e=>{
+  if(state.status!=='running'||paused){pointer=null;return;}
   const tile=e.target.closest('[data-index]');
   if(tile)pointer={i:Number(tile.dataset.index),x:e.clientX,y:e.clientY};
 });

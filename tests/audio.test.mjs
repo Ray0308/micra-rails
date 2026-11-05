@@ -143,3 +143,14 @@ test('reward is canceled on hide, SFX zero and master OFF, and cannot start mute
  const count=ctx.noises.length;f.audio.reward(true);assert.equal(ctx.noises.length,count);
  f.audio.setVolume('sfx',50);f.audio.reward();f.audio.setEnabled(false);assert.ok(ctx.noises.at(-1).stoppedNow);f.audio.dispose();
 });
+
+
+test('explosion replaces hiss, uses effect volume, and has a bounded impact with a fading tail',()=>{
+ const f=fixture();f.audio.setVolume('bgm',0);f.audio.setEnabled(true);f.audio.hiss();const ctx=f.instances[0],hiss=ctx.noises.at(-1);
+ f.audio.explode();const blast=ctx.noises.at(-1);assert.ok(hiss.stoppedNow);assert.equal(blast.connectedTo,ctx.gains[2]);
+ assert.equal(blast.buffer.length,ctx.sampleRate*1.05);const samples=blast.buffer.getChannelData(0);
+ const peak=values=>values.reduce((m,v)=>Math.max(m,Math.abs(v)),0);
+ assert.ok(peak(samples)>.2);assert.ok(peak(samples)<=.75);assert.ok(peak(samples.slice(-400))<.04);
+ f.audio.explode();assert.equal(ctx.noises.at(-1).buffer,blast.buffer);f.audio.setEnabled(false);assert.ok(ctx.noises.at(-1).stoppedNow);
+ const count=ctx.noises.length;f.audio.explode();assert.equal(ctx.noises.length,count);f.audio.dispose();
+});

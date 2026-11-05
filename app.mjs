@@ -3,7 +3,7 @@ import {railArtwork} from './rail-art.mjs?v=0.4.4';
 import {renderTiles} from './tile-view.mjs?v=0.4.3';
 import {WORLDS,isWorld,loadWorld,saveWorld} from './worlds.mjs?v=0.3.1';
 import {createJourneyStore} from './journey.mjs?v=0.2.5';
-import {createAudioController} from './audio.mjs?v=0.4.7';
+import {createAudioController} from './audio.mjs?v=0.4.8';
 import {createCatalogUI} from './catalog-ui.mjs?v=0.4.7';
 import {create,slide,start,ports,neighbor,canEdit,swap,rotate,build,removePlaced} from './engine.mjs?v=0.3.1';
 import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS} from './motion.mjs?v=0.3.1';
@@ -207,7 +207,7 @@ function finish(win){
   $('result-title').textContent=win?'にげきった！':'ドカーン！';
   $('result-text').textContent=win?`${state.moves}回のスライドで、駅に到着。`:'次はどこにつなごう？ もう一度チャレンジ。';
   if(!win)$('board').classList.add('boom');
-  tone(win?850:70,.35);render();
+  audio.explode();render();
 }
 
 function tick(now){

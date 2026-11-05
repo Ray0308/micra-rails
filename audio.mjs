@@ -122,6 +122,26 @@ export function createAudioController({storage,Context=globalThis.AudioContext||
    const source=context.createBufferSource();source.buffer=buffer;source.connect(effects);
    source.onended=()=>source.disconnect();source.start(context.currentTime);source.stop(context.currentTime+length);
   },
+  explode(){
+   stopHisses();
+   if(!settings.enabled||settings.sfx===0||!visible||!unlock())return;
+   const length=1.05;let buffer=effectBuffers.get('explosion');
+   if(!buffer){
+    buffer=context.createBuffer(1,Math.ceil(context.sampleRate*length),context.sampleRate);
+    const samples=buffer.getChannelData(0);let rumble=0;
+    for(let i=0;i<samples.length;i++){
+     const t=i/context.sampleRate,noise=Math.random()*2-1;rumble=rumble*.94+noise*.06;
+     const bass=Math.sin(2*Math.PI*(95*t-28*t*t))*.32*Math.exp(-t*8);
+     const blast=noise*.34*Math.exp(-t*20)+rumble*.65*Math.exp(-t*4);
+     let chips=0;
+     for(const start of [.11,.19,.30,.44]){const u=t-start;if(u>=0&&u<.10)chips+=noise*.12*Math.exp(-u*55);}
+     samples[i]=Math.max(-.75,Math.min(.75,(bass+blast+chips)*Math.min(1,t/.002)*Math.min(1,(length-t)/.10)));
+    }
+    effectBuffers.set('explosion',buffer);
+   }
+   const source=context.createBufferSource(),time=context.currentTime;source.buffer=buffer;source.connect(effects);rewardVoices.add(source);
+   source.onended=()=>{rewardVoices.delete(source);source.disconnect()};source.start(time);source.stop(time+length);
+  },
   reward(shiny=false){
    if(!settings.enabled||settings.sfx===0||!visible||!unlock())return;
    const length=shiny?1.65:1.25,key=shiny?'reward-shiny':'reward';

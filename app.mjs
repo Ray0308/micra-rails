@@ -18,4 +18,18 @@ $('pause').onclick=()=>{paused=!paused;last=0;render()};$('sound').onclick=()=>{
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.status==='running'){paused=true;last=0;render()}});
 function finish(win){$('overlay').hidden=false;$('result-icon').textContent=win?'🏡':'💥';$('result-title').textContent=win?'にげきった！':'ドカーン！';$('result-text').textContent=win?`${state.moves}回のスライドで、駅に到着。`:'次はどこにつなごう？ もう一度チャレンジ。';if(!win)$('board').classList.add('boom');tone(win?850:70,.35);render()}
 function tick(now){const delta=last?Math.min(now-last,100):0;last=now;if(state.status==='running'&&!paused){total+=delta;aTime+=delta;const easy=$('pace').value==='easy',aInterval=easy?2600:1900,bInterval=easy?2200:1500;if(aTime>=aInterval){aTime-=aInterval;advance(state);render();if(state.status==='won')finish(true)}if(state.status==='running'){if(total>5500){bTime+=delta;if(bTime>=bInterval){bTime-=bInterval;chase(state);render()}}if(state.b===state.a){fuse+=delta;if(fuse>=950){state.status='lost';finish(false)}else if(fuse===delta)render()}else if(fuse){fuse=0;render()}}}requestAnimationFrame(tick)}
+const screenIds={title:'title-screen',game:'game-screen',guide:'guide-screen',exit:'exit-screen'};
+function showScreen(name){
+  if(name!=='game'&&state.status==='running'){paused=true;last=0;render()}
+  document.body.dataset.screen=name;
+  for(const [key,id] of Object.entries(screenIds))$(id).hidden=key!==name;
+  window.scrollTo(0,0);
+  const target=name==='title'?$('play-game'):name==='game'?$('start'):$(screenIds[name]).querySelector('button');
+  target?.focus({preventScroll:true});
+}
+$('play-game').onclick=()=>{reset();showScreen('game')};
+$('open-guide').onclick=()=>showScreen('guide');
+$('exit-game').onclick=()=>showScreen('exit');
+$('back-title').onclick=()=>showScreen('title');
+document.querySelectorAll('[data-back-title]').forEach(button=>button.onclick=()=>showScreen('title'));
 reset();requestAnimationFrame(tick);

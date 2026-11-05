@@ -6,8 +6,9 @@ export function cleanAudioSettings(value){
 
 // Separate master, music, and effect buses. Context creation always follows a user gesture.
 export function createAudioController({storage,Context=globalThis.AudioContext||globalThis.webkitAudioContext,schedule=setInterval,cancel=clearInterval}={}){
- let settings=cleanAudioSettings(),context,master,music,effects,timer=null,visible=true,unlocked=false,disposed=false,nextTime=0,step=0,scene='title',visibilityTask=Promise.resolve();
- const musicVoices=new Set(),hisses=new Set(),effectBuffers=new Map();
+ let settings=cleanAudioSettings(),context,master,music,effects,timer=null,visible=true,unlocked=false,disposed=false,nextTime=0,step=0,duckUntil=0,scene='title',visibilityTask=Promise.resolve();
+ const musicVoices=new Set(),hisses=new Set(),effectBuffers=new Map(),rewardVoices=new Set();
+ function stopRewards(){duckUntil=0;for(const source of [...rewardVoices]){try{source.stop()}catch{}}rewardVoices.clear()}
  function stopHisses(){for(const stop of [...hisses])stop()}
  try{const raw=storage?.getItem(AUDIO_KEY);if(raw)settings=cleanAudioSettings(JSON.parse(raw))}catch{}
  function save(){try{storage?.setItem(AUDIO_KEY,JSON.stringify(settings))}catch{}}
@@ -61,8 +62,9 @@ export function createAudioController({storage,Context=globalThis.AudioContext||
  }
  function sync(){
   if(!context||disposed)return;
-  if(!settings.enabled||settings.sfx===0||!visible)stopHisses();
-  gain(master.gain,settings.enabled&&visible?1:0);gain(music.gain,settings.bgm/100);gain(effects.gain,settings.sfx/100);
+  if(!settings.enabled||settings.sfx===0||!visible){stopHisses();stopRewards();}
+  gain(master.gain,settings.enabled&&visible?1:0);gain(music.gain,settings.bgm/100*(context.currentTime<duckUntil?.25:1));
+  if(context.currentTime<duckUntil)music.gain.setTargetAtTime(settings.bgm/100,duckUntil,.12);gain(effects.gain,settings.sfx/100);
   if(settings.enabled&&visible&&settings.bgm>0&&unlocked){
    if(timer===null){nextTime=context.currentTime+.04;step=0;fillMusic();timer=schedule(fillMusic,100);timer?.unref?.()}
   }else stopMusic();
@@ -120,6 +122,36 @@ export function createAudioController({storage,Context=globalThis.AudioContext||
    const source=context.createBufferSource();source.buffer=buffer;source.connect(effects);
    source.onended=()=>source.disconnect();source.start(context.currentTime);source.stop(context.currentTime+length);
   },
+  reward(shiny=false){
+   if(!settings.enabled||settings.sfx===0||!visible||!unlock())return;
+   const length=shiny?1.65:1.25,key=shiny?'reward-shiny':'reward';
+   let buffer=effectBuffers.get(key);
+   if(!buffer){
+    buffer=context.createBuffer(1,Math.ceil(context.sampleRate*length),context.sampleRate);
+    const samples=buffer.getChannelData(0),notes=shiny?[72,76,79,84,88,91]:[72,76,79,84];
+    for(let i=0;i<samples.length;i++){
+     const t=i/context.sampleRate;let sample=0;
+     // Low fracture, then three short scattered stone chips.
+     if(t<.25)sample+=.20*Math.sin(2*Math.PI*(150-200*t)*t)*Math.exp(-t*26);
+     for(const start of [0,.045,.10]){const u=t-start;if(u>=0&&u<.13)sample+=(Math.random()*2-1)*.27*Math.exp(-u*48)*(1-u/.13);}
+     // The first glint lands with the card's CSS release delay (.22 seconds).
+     for(let n=0;n<notes.length;n++){
+      const u=t-(.24+n*.10);if(u<0)continue;
+      const hz=440*2**((notes[n]-69)/12),phase=2*Math.PI*hz*u;
+      sample+=(Math.sin(phase)+.22*Math.sin(phase*2)+.10*Math.sin(phase*4))*Math.min(1,u/.007)*Math.exp(-u*5.5)*.15;
+     }
+     if(t>.62){const u=t-.62;for(const midi of [72,76,79])sample+=.035*Math.sin(2*Math.PI*440*2**((midi-69)/12)*u)*Math.min(1,u/.02)*Math.exp(-u*4);}
+     samples[i]=Math.max(-.85,Math.min(.85,sample))*Math.min(1,(length-t)/.08);
+    }
+    effectBuffers.set(key,buffer);
+   }
+   const source=context.createBufferSource(),time=context.currentTime;source.buffer=buffer;source.connect(effects);rewardVoices.add(source);
+   source.onended=()=>{rewardVoices.delete(source);source.disconnect()};source.start(time);source.stop(time+length);
+   // Let the reward stand out without changing the user's BGM slider.
+   duckUntil=time+length-.15;
+   music.gain.cancelScheduledValues(time);music.gain.setTargetAtTime(settings.bgm/100*.25,time,.025);
+   music.gain.setTargetAtTime(settings.bgm/100,duckUntil,.12);
+  },
   tone(hz=300,duration=.08){
    if(!settings.enabled||settings.sfx===0||!visible||!unlock())return;
    voice(hz,context.currentTime,Math.max(.10,duration),.20,effects);
@@ -139,6 +171,6 @@ export function createAudioController({storage,Context=globalThis.AudioContext||
    source.onended=()=>{ended=true;hisses.delete(stop);source.disconnect();filter.disconnect();envelope.disconnect()};
    hisses.add(stop);source.start(time);source.stop(time+length);return stop;
   },
-  dispose(){disposed=true;stopHisses();stopMusic();context?.close()?.catch?.(()=>{})},
+  dispose(){disposed=true;stopRewards();stopHisses();stopMusic();context?.close()?.catch?.(()=>{})},
  };
 }

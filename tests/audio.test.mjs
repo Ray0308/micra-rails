@@ -123,3 +123,23 @@ test('foreground recovery waits for an unfinished background suspend before resu
  assert.equal(ctx.state,'running');assert.equal(ctx.gains[0].gain.value,1);assert.equal(f.jobs.size,1);assert.equal(f.audio.scene,'game');
  f.audio.effect('click');assert.ok(ctx.noises.at(-1).started);f.audio.dispose();
 });
+
+
+test('reward has fracture and later chime, with a longer shiny variation and cached samples',()=>{
+ const f=fixture();f.audio.setVolume('bgm',0);f.audio.setEnabled(true);f.audio.reward(false);const ctx=f.instances[0],normal=ctx.noises.at(-1);
+ assert.equal(normal.connectedTo,ctx.gains[2]);assert.equal(normal.buffer.length,ctx.sampleRate*1.25);
+ const samples=normal.buffer.getChannelData(0);
+ assert.ok(samples.slice(0,ctx.sampleRate*.2).some(v=>Math.abs(v)>.1));
+ assert.ok(samples.slice(ctx.sampleRate*.3,ctx.sampleRate*.8).some(v=>Math.abs(v)>.1));
+ f.audio.reward(true);assert.ok(ctx.noises.at(-1).buffer.length>normal.buffer.length);
+ f.audio.reward(false);assert.equal(ctx.noises.at(-1).buffer,normal.buffer);
+ f.audio.dispose();
+});
+
+test('reward is canceled on hide, SFX zero and master OFF, and cannot start muted',async()=>{
+ const f=fixture();f.audio.setVolume('bgm',0);f.audio.setEnabled(true);f.audio.reward();const ctx=f.instances[0];
+ await f.audio.setVisible(false);assert.ok(ctx.noises.at(-1).stoppedNow);
+ await f.audio.setVisible(true);f.audio.reward();f.audio.setVolume('sfx',0);assert.ok(ctx.noises.at(-1).stoppedNow);
+ const count=ctx.noises.length;f.audio.reward(true);assert.equal(ctx.noises.length,count);
+ f.audio.setVolume('sfx',50);f.audio.reward();f.audio.setEnabled(false);assert.ok(ctx.noises.at(-1).stoppedNow);f.audio.dispose();
+});

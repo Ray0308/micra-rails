@@ -3,8 +3,8 @@ import {railArtwork} from './rail-art.mjs?v=0.4.4';
 import {renderTiles} from './tile-view.mjs?v=0.4.3';
 import {WORLDS,isWorld,loadWorld,saveWorld} from './worlds.mjs?v=0.3.1';
 import {createJourneyStore} from './journey.mjs?v=0.2.5';
-import {createAudioController} from './audio.mjs?v=0.4.6';
-import {createCatalogUI} from './catalog-ui.mjs?v=0.4.6';
+import {createAudioController} from './audio.mjs?v=0.4.7';
+import {createCatalogUI} from './catalog-ui.mjs?v=0.4.7';
 import {create,slide,start,ports,neighbor,canEdit,swap,rotate,build,removePlaced} from './engine.mjs?v=0.3.1';
 import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS} from './motion.mjs?v=0.3.1';
 
@@ -237,7 +237,7 @@ function showScreen(name){
 }
 let collectionStorage;
 try{collectionStorage=window.localStorage}catch{}
-collectionUI=createCatalogUI({showScreen,playTone:tone,playMining:()=>audio.effect('mine'),storage:collectionStorage,audioSettings:()=>audio.settings,onContinue:(level,world)=>{
+collectionUI=createCatalogUI({showScreen,playTone:tone,playMining:()=>audio.effect('mine'),playReward:shiny=>audio.reward(shiny),storage:collectionStorage,audioSettings:()=>audio.settings,onContinue:(level,world)=>{
   if(isWorld(world)){selectedWorld=world;saveWorld(audioStorage,world)}
   journey.complete(level);reset();showScreen('game');
 }});

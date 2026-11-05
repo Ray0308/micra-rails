@@ -52,3 +52,6 @@ body[data-screen="title"]::before{
 @media(prefers-reduced-motion:reduce){
   body[data-screen="title"]::before{animation:none;transform:none}
 }
+
+.version-badge{position:fixed;top:max(10px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));z-index:50;padding:5px 9px;border:1px solid #ffffff40;background:#101b16b3;color:#f0f3e8;font:12px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;border-radius:3px;pointer-events:none;text-shadow:0 1px 2px #000}
+#game-screen{padding-top:46px}

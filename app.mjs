@@ -1,3 +1,4 @@
+import {renderTiles} from './tile-view.mjs?v=0.4.3';
 import {WORLDS,isWorld,loadWorld,saveWorld} from './worlds.mjs?v=0.3.1';
 import {createJourneyStore} from './journey.mjs?v=0.2.5';
 import {createAudioController} from './audio.mjs?v=0.4.1';
@@ -105,7 +106,13 @@ function positionActors(){
   $('actors').classList.toggle('actors-paused',paused||brakeFreezesWorld());
 }
 
+const railMarkupCache=new Map();
 function railArtwork(type,key){
+ const cacheKey=type+':'+key;
+ if(!railMarkupCache.has(cacheKey))railMarkupCache.set(cacheKey,makeRailArtwork(type,key));
+ return railMarkupCache.get(cacheKey);
+}
+function makeRailArtwork(type,key){
  if(type==='v'||type==='h')return `<svg viewBox="0 0 32 32" aria-hidden="true" shape-rendering="crispEdges"><defs><clipPath id="straight-${key}"><rect x="10.7" y="0" width="1.6" height="32"/><rect x="19.7" y="0" width="1.6" height="32"/>${[2.3,9.3,16.3,23.3,30.3].map(y=>`<rect x="9.85" y="${y}" width="12.3" height="3.4"/>`).join('')}</clipPath></defs><g${type==='h'?' transform="rotate(90 16 16)"':''}><image href="assets/rail-straight.png?v=0.4.0" x="8" y="0" width="16" height="32" preserveAspectRatio="none" clip-path="url(#straight-${key})"/></g></svg>`;
  // A finer pixel grid keeps the rails slim while preserving full-edge connections.
  const dirs=ports[type],rects=[];
@@ -127,16 +134,16 @@ function render(){
  if(!state)return;
  const config=WORLDS[state.world],gap=state.tiles.indexOf(null),active=state.status==='running'&&!paused;
  if(selectedTile!==null&&!canEdit(state,selectedTile))selectedTile=null;
- $('board').innerHTML=state.tiles.map((tile,i)=>{
+ renderTiles($('board'),state.tiles.map((tile,i)=>{
   const editable=active&&canEdit(state,i),reserved=i===state.reserved;
   if(!tile&&state.world!=='nether')return '<div class="tile empty" aria-label="空きマス"></div>';
   const actionable=editable&&(state.world==='end'?ports.cross.some(d=>neighbor(gap,d)===i):state.world==='mine'?tile?.type!=='cross':state.world==='nether'?!tile||state.placed.has(i):true);
   const action=state.world==='grass'?'入れ替え':state.world==='mine'?'回転':state.world==='nether'?(tile?'線路を戻す':'線路を置く'):'移動';
   const mark=i===0?'<span class="badge">▶</span>':i===15?(assets.house?`<img class="house-img" src="${assets.house}" alt="駅">`:'<span class="house">⌂</span>'):'';
   return `<button data-index="${i}" aria-disabled="${!actionable}" tabindex="${actionable?0:-1}" class="tile ${!tile?'placement-slot':''} ${tile?.used.length?'locked':''} ${reserved?'reserved':''} ${actionable&&state.world==='end'?'movable':''} ${selectedTile===i?'selected-tile':''}" aria-label="${Math.floor(i/4)+1}行${i%4+1}列 ${tile?.used.length?'固定':reserved?'進入中':actionable?action:'操作不可'}${selectedTile===i?' 選択中':''}">${tile?railArtwork(tile.type,'board-'+i):'<span class="place-plus" aria-hidden="true">＋</span>'}${mark}</button>`;
- }).join('');
+ }));
  $('world-queue').hidden=state.world!=='nether';
- if(state.world==='nether')$('queue-pieces').innerHTML=state.queue.slice(0,3).map((type,i)=>`<span class="queue-piece ${i===0?'next-piece':''}" aria-label="${i+1}番目の線路">${railArtwork(type,'queue-'+i)}</span>`).join('');
+ if(state.world==='nether'){const queueMarkup=state.queue.slice(0,3).map((type,i)=>`<span class="queue-piece ${i===0?'next-piece':''}" aria-label="${i+1}番目の線路">${railArtwork(type,'queue-'+i)}</span>`).join('');if($('queue-pieces').innerHTML!==queueMarkup)$('queue-pieces').innerHTML=queueMarkup;}
  $('moves').textContent=`${state.moves} 手`;
  const canDrive=state.status==='ready'||state.status==='running',isStopped=state.status==='running'&&motion.cartStopped;
  $('start').disabled=!canDrive||paused;

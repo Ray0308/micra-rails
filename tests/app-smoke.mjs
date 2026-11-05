@@ -11,7 +11,7 @@ class Element{
 const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const elements=new Map([...html.matchAll(/id="([^"]+)"/g)].map(m=>[m[1],new Element(m[1])]));
 const el=id=>{assert.ok(elements.has(id),`Missing DOM node: ${id}`);return elements.get(id)};
-globalThis.document={getElementById:el,body:{dataset:{screen:'title'}},querySelectorAll:()=>[],addEventListener(){}};
+globalThis.document={getElementById:el,body:Object.assign(new Element('body'),{dataset:{screen:'title'}}),querySelectorAll:()=>[],addEventListener(){}};
 const saved=new Map();
 globalThis.window={scrollTo(){},addEventListener(){},innerWidth:390,localStorage:{getItem:k=>saved.get(k)||null,setItem:(k,v)=>saved.set(k,v)}};
 globalThis.getComputedStyle=()=>({columnGap:'5'});

@@ -1,0 +1,36 @@
+export const STARTUP_ASSETS=[
+ 'assets/rail-straight-v044.png','assets/rail-curve-v044.png','assets/rail-cross-v044.png',
+ 'assets/steve.png?v=0.1.4','assets/creeper.png?v=0.1.4','assets/station.svg?v=0.1.4',
+ 'assets/title-logo-transparent.png','assets/background.jpg',
+ 'assets/floor-grass.png?v=0.3.9','assets/floor-mine.png?v=0.4.0','assets/floor-nether.png?v=0.4.0','assets/floor-end.png?v=0.4.0',
+ 'assets/world-grassland.png','assets/mine-backdrop.png','assets/world-nether.png','assets/world-end.png',
+ 'assets/block-grass.jpg','assets/block-mine.jpg','assets/block-nether.jpg','assets/block-end.jpg',
+];
+export function loadImage(src,{ImageClass=globalThis.Image,timeoutMs=10000}={}){
+ return new Promise(resolve=>{
+  const image=new ImageClass();let done=false;
+  const finish=ok=>{if(done)return;done=true;clearTimeout(timer);image.onload=image.onerror=null;resolve({src,ok});};
+  const timer=setTimeout(()=>finish(false),timeoutMs);
+  image.onload=()=>{if(image.decode)image.decode().then(()=>finish(true),()=>finish(false));else finish(true)};
+  image.onerror=()=>finish(false);image.src=src;
+ });
+}
+export async function preloadImages(urls,{onProgress=()=>{},concurrency=4,...options}={}){
+ const assets=[...new Set(urls)],results=[];let cursor=0,completed=0;
+ onProgress(0,assets.length);
+ await Promise.all(Array.from({length:Math.min(concurrency,assets.length)},async()=>{
+  while(cursor<assets.length){const src=assets[cursor++];results.push(await loadImage(src,options));onProgress(++completed,assets.length);}
+ }));
+ return results;
+}
+export async function runStartup({document=globalThis.document,minDuration=1000,maxDuration=15000}={}){
+ const splash=document.getElementById('boot-screen'),progress=document.getElementById('boot-progress'),label=document.getElementById('boot-status');
+ const minimum=new Promise(resolve=>setTimeout(resolve,minDuration));
+ let deadline;
+ await Promise.race([new Promise(resolve=>{deadline=setTimeout(resolve,maxDuration)}),Promise.all([minimum,preloadImages(STARTUP_ASSETS,{onProgress:(done,total)=>{
+  progress.value=done;progress.max=total;label.textContent=`読み込み中 ${done} / ${total}`;
+ }})])]);
+ clearTimeout(deadline);
+ // A missing image must not trap the player. Browser requests can retry on display.
+ splash.hidden=true;document.body.classList.remove('booting');
+}

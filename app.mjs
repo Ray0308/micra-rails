@@ -1,3 +1,4 @@
+import {runStartup} from './startup.mjs?v=0.4.5';
 import {railArtwork} from './rail-art.mjs?v=0.4.4';
 import {renderTiles} from './tile-view.mjs?v=0.4.3';
 import {WORLDS,isWorld,loadWorld,saveWorld} from './worlds.mjs?v=0.3.1';
@@ -251,3 +252,5 @@ if(isWorld(pendingWorld)){selectedWorld=pendingWorld;saveWorld(audioStorage,pend
 const pendingLevel=collectionUI.pendingLevel();
 if(Number.isSafeInteger(pendingLevel))journey.complete(pendingLevel);
 reset();collectionUI.resumeReward();requestAnimationFrame(tick);
+
+void runStartup();

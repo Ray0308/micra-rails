@@ -2,9 +2,10 @@ import {createJourneyStore,stageName} from './journey.mjs?v=0.2.5';
 import {createAudioController} from './audio.mjs?v=0.2.6';
 import {createCatalogUI} from './catalog-ui.mjs?v=0.2.8';
 import {create,slide,start,ports,neighbor} from './engine.mjs?v=0.2.5';
-import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS,CREEPER_STEP_MS} from './motion.mjs?v=0.2.6';
+import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS,CREEPER_STEP_MS} from './motion.mjs?v=0.3.0';
 
 const $=id=>document.getElementById(id);
+const STOP_ICON='<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6H18V18H6Z" fill="currentColor"/></svg>';
 const UI_ICONS={"back":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M14 5L7 12L14 19M8 12H20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg>","play":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M8 5L19 12L8 19Z\" fill=\"currentColor\"/></svg>","pause":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M6 5H10V19H6ZM14 5H18V19H14Z\" fill=\"currentColor\"/></svg>","reset":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M19 10A7 7 0 1 0 19 15M19 4V10H13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"miter\"/></svg>","soundOn":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 9H7L12 5V19L7 15H3Z\" fill=\"currentColor\"/><path d=\"M16 8C19 10 19 14 16 16M19 5C24 9 24 15 19 19\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg>","soundOff":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 9H7L12 5V19L7 15H3Z\" fill=\"currentColor\"/><path d=\"M16 9L22 15M22 9L16 15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg>"};
 let state,motion,paused=false,last=null,pointer,runId,collectionUI,stopHiss;
 let audioStorage;
@@ -112,14 +113,20 @@ function render(){
     return `<button data-index="${i}" aria-disabled="${!movable}" tabindex="${movable?0:-1}" class="tile ${tile.used.length?'locked':''} ${reserved?'reserved':''} ${movable?'movable':''}" aria-label="${Math.floor(i/4)+1}行${i%4+1}列 ${tile.type==='cross'?'十字':'レール'} ${tile.used.length?'固定':reserved?'進入中':movable?'移動できる':''}"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><mask id="rail-mask-${i}" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="black"/><g stroke="white" stroke-width="29" fill="none">${lines}</g><g stroke="black" stroke-width="19" fill="none">${lines}</g></mask><linearGradient id="rail-metal-${i}" x2="1" y2="1"><stop stop-color="#eee3c5"/><stop offset=".42" stop-color="#979b99"/><stop offset=".58" stop-color="#dedbcb"/><stop offset="1" stop-color="#666b6b"/></linearGradient></defs><g stroke="#342316" stroke-width="46" stroke-dasharray="9 11" fill="none">${lines}</g><g stroke="#916b42" stroke-width="40" stroke-dasharray="7 13" fill="none">${lines}</g><rect width="100" height="100" fill="url(#rail-metal-${i})" mask="url(#rail-mask-${i})"/></svg>${i===0?'<span class="badge">▶</span>':''}${i===15?(assets.house?`<img class="house-img" src="${assets.house}" alt="駅">`:'<span class="house">⌂</span>'):''}</button>`;
   }).join('');
   $('moves').textContent=`${state.moves} 手`;
-  $('start').disabled=state.status!=='ready';
+  const canDrive=state.status==='ready'||state.status==='running';
+  const isStopped=state.status==='running'&&motion.cartStopped;
+  $('start').disabled=!canDrive||paused;
+  const driveLabel=state.status==='running'?(isStopped?'発車':'停車'):'出発';
+  $('start').innerHTML=(state.status==='running'&&!isStopped?STOP_ICON:UI_ICONS.play)+'<span>'+driveLabel+'</span>';
+  $('start').setAttribute('aria-label',state.status==='running'?(isStopped?'スティーブを発車させる':'スティーブを停車させる'):'出発');
+  $('start').setAttribute('aria-pressed',String(isStopped));
   $('pause').disabled=state.status!=='running';
   $('pause').innerHTML=paused?UI_ICONS.play:UI_ICONS.pause;
   $('pause').setAttribute('aria-label',paused?'つづける':'一時停止');
   $('pause').setAttribute('aria-pressed',String(paused));
   const currentStageName=stageName(state.level);
   if($('stage-number').textContent!==currentStageName)$('stage-number').textContent=currentStageName;
-  $('message').textContent=paused?'おやすみ中。つづけるボタンで再開。':state.status==='ready'?'出発でトロッコを走らせよう。':state.status==='won'?'脱出成功！':state.status==='lost'?'つかまった！ レールを変えて、もう一度。':motion.fuse?'シュー……！ はやく、はなれて！':motion.elapsed<5500?'トロッコが出発！ もうすぐクリーパーが来る。':'歩いて追いかけてきた！ 右下の駅までレールをつなごう。';
+  $('message').textContent=paused?'おやすみ中。つづけるボタンで再開。':state.status==='ready'?'出発でトロッコを走らせよう。':state.status==='won'?'脱出成功！':state.status==='lost'?'つかまった！ レールを変えて、もう一度。':motion.fuse?'シュー……！ はやく、はなれて！':motion.cartStopped?'停車中。線路をつないでから発車しよう。':motion.elapsed<5500?'トロッコが出発！ もうすぐクリーパーが来る。':'歩いて追いかけてきた！ 右下の駅までレールをつなごう。';
   positionActors();
 }
 
@@ -147,7 +154,16 @@ $('board').addEventListener('click',e=>{
   if(e.detail===0){const tile=e.target.closest('[data-index]');if(tile)move(Number(tile.dataset.index))}
 });
 
-$('start').onclick=()=>{start(state);last=null;tone(650,.15);render()};
+$('start').onclick=()=>{
+  if(paused)return;
+  if(state.status==='ready'){start(state);last=null;tone(650,.15)}
+  else if(state.status==='running'){
+    motion.cartStopped=!motion.cartStopped;
+    motion.movingA=!motion.cartStopped&&Boolean(motion.segment);
+    tone(motion.cartStopped?220:520,.07);
+  }else return;
+  render();
+};
 $('reset').onclick=reset;$('again').onclick=reset;
 $('pause').onclick=()=>{paused=!paused;last=null;if(paused)stopFuseSound();else if(motion.fuse>0)beginFuseSound();render()};
 $('sound').onclick=()=>setSound(!audio.settings.enabled);

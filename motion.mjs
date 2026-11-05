@@ -4,7 +4,7 @@ export const CREEPER_FUSE_MS=3000;
 export const CREEPER_STEP_MS=1700;
 
 export function createMotion(state){
-  return {elapsed:0,route:[state.a],aDistance:0,bDistance:null,segment:null,fuse:0,movingA:false,movingB:false};
+  return {elapsed:0,route:[state.a],aDistance:0,bDistance:null,segment:null,fuse:0,movingA:false,movingB:false,cartStopped:false};
 }
 
 export function sampleRoute(route,distance){
@@ -23,7 +23,7 @@ export function updateMotion(state,m,delta,{aInterval=2600,bInterval=2200,delay=
   for(let remaining=delta;remaining>0&&state.status==='running';){
     const dt=Math.min(remaining,16);remaining-=dt;
     const before=m.elapsed;m.elapsed+=dt;
-    if(!m.segment){
+    if(!m.segment&&!m.cartStopped){
       const step=nextStep(state);
       if(step){
         m.segment={progress:0,committed:false};
@@ -32,8 +32,8 @@ export function updateMotion(state,m,delta,{aInterval=2600,bInterval=2200,delay=
         changed=true;
       }
     }
-    m.movingA=Boolean(m.segment);
-    if(m.segment){
+    m.movingA=Boolean(m.segment)&&!m.cartStopped;
+    if(m.segment&&!m.cartStopped){
       const segment=m.segment;
       segment.progress=Math.min(1,segment.progress+dt/aInterval);
       m.aDistance=m.route.length-2+segment.progress;

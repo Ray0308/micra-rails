@@ -73,3 +73,21 @@ test('the adjusted walking speed takes 1.7 seconds per cell',()=>{
  const [s,m]=caughtAtBlockedRail();m.bDistance=0;
  run(s,m,850,{delay:0,bInterval:CREEPER_STEP_MS});assert.ok(Math.abs(m.bDistance-.5)<.001);assert.equal(m.fuse,0);
 });
+
+test('cart brake freezes position and tile locking, permits rail slides, and resumes without jumping',()=>{
+ const [s,m]=ready(true);run(s,m,650);const position=m.aDistance,progress=m.segment.progress,used=s.tiles[1].used.length;
+ m.cartStopped=true;run(s,m,2000);assert.equal(m.aDistance,position);assert.equal(m.segment.progress,progress);assert.equal(s.tiles[1].used.length,used);assert.equal(m.movingA,false);
+ assert.ok(slide(s,10),'unlocked rails remain editable while only the cart is stopped');
+ m.cartStopped=false;run(s,m,130);assert.ok(m.aDistance>position&&m.aDistance<position+.06,'braking time must not turn into a jump');
+});
+
+test('brake before the first movement does not reserve or lock the next panel',()=>{
+ const [s,m]=ready();m.cartStopped=true;run(s,m,1000);
+ assert.equal(m.aDistance,0);assert.equal(m.segment,null);assert.equal(s.reserved,undefined);assert.equal(s.tiles[1].used.length,0);assert.ok(slide(s,1));
+});
+
+test('the Creeper keeps walking and can ignite and explode while the cart brake is held',()=>{
+ const [s,m]=caughtAtBlockedRail();m.bDistance=0;m.cartStopped=true;
+ run(s,m,850,{delay:0,bInterval:CREEPER_STEP_MS});assert.equal(m.aDistance,1);assert.ok(m.bDistance>.49);assert.equal(m.movingB,true);
+ run(s,m,5000,{delay:0,bInterval:CREEPER_STEP_MS});assert.equal(s.status,'lost');assert.equal(m.aDistance,1);assert.ok(m.fuse>=3000);
+});

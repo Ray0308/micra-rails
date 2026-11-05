@@ -253,3 +253,7 @@ body[data-screen="reward"]::after{background:radial-gradient(ellipse at 50% 42%,
 
 .stage-label{display:flex;align-items:center;justify-content:center;min-height:44px;color:#e9e8dc;text-shadow:1px 2px #171a11;font-size:15px;font-weight:800;letter-spacing:3px}
 @media(orientation:landscape) and (max-height:540px){.play-console .stage-label{font-size:12px;letter-spacing:1px}}
+
+/* A warm pressed state distinguishes the cart brake from global pause. */
+.play-console .actions .primary[aria-pressed="true"]:not(:disabled){background:#89734c;color:#fff1cc;box-shadow:inset 2px 2px #534428,inset -2px -2px #b9a176,0 1px #10110c}
+.play-console .actions .primary[aria-pressed="true"]:hover:not(:disabled){background:#998258}

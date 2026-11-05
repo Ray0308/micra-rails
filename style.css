@@ -306,3 +306,6 @@ body[data-world="nether"]{--floor-texture:url("assets/floor-nether.png");--floor
 body[data-world="end"]{--floor-texture:url("assets/floor-end.png");--floor-color:#c9ca8a}
 body[data-world] .play-console button.tile:not(.placement-slot),body[data-world] .play-console button.tile:not(.placement-slot):hover{background:var(--floor-color) var(--floor-texture) center / cover;background-blend-mode:normal}
 body[data-world] .queue-piece{background:var(--floor-color) var(--floor-texture) center / cover}
+
+/* Bright grass material: blend only the floor, leaving rail and actor colors intact. */
+body[data-world="grass"] .play-console button.tile:not(.placement-slot),body[data-world="grass"] .play-console button.tile:not(.placement-slot):hover,body[data-world="grass"] .queue-piece{background-image:linear-gradient(#42b52b99,#42b52b99),var(--floor-texture);background-color:#659b35;background-size:cover;background-position:center;background-blend-mode:screen,normal}

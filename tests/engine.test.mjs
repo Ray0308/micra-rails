@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {create,slide,start,advance,chase} from '../engine.mjs';
+const reverse=[[6,10,14],[6,10,9,13,14],[6,5,9,10,14]];
+for(let level=0;level<3;level++)test(`stage ${level+1} has a legal solution`,()=>{const s=create(level);for(const i of reverse[level])assert.ok(slide(s,i));start(s);for(let i=0;i<6;i++)assert.ok(advance(s));assert.equal(s.status,'won');assert.deepEqual(s.trail,[0,1,2,3,7,11,15])});
+test('only adjacent unlocked tiles slide',()=>{const s=create();assert.equal(slide(s,15),false);assert.equal(slide(s,0),false);start(s);advance(s);assert.equal(slide(s,1),false)});
+test('blocked Steve waits and pursuer catches up',()=>{const s=create();start(s);assert.ok(advance(s));assert.equal(advance(s),false);chase(s);chase(s);assert.equal(s.a,s.b)});
+test('used cross permits only the unused axis',()=>{const s=create();s.status='running';s.a=5;s.entry=1;s.tiles[5]={type:'h',used:['h']};s.tiles[4]={type:'cross',used:['v']};assert.ok(advance(s));assert.deepEqual(s.tiles[4].used,['v','h']);s.a=5;s.entry=1;assert.equal(advance(s),false)});
+test('cannot reenter an ordinary used panel',()=>{const s=create();s.status='running';s.a=1;s.entry=1;s.tiles[0].used=['h'];assert.equal(advance(s),false)});

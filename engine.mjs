@@ -27,8 +27,8 @@ export function seededRandom(seed){
  return ()=>{value=(value+0x6D2B79F5)>>>0;let t=value;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296};
 }
 function shuffled(items,rng){const list=[...items];for(let i=list.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[list[i],list[j]]=[list[j],list[i]]}return list}
-function randomPath(rng){
- const edges=6+2*Math.floor(rng()*3),path=[0],visited=new Set(path);
+function randomPath(rng,lengths=[6,8,10]){
+ const edges=lengths[Math.floor(rng()*lengths.length)],path=[0],visited=new Set(path);
  function walk(cell){
   const remaining=edges-(path.length-1),distance=3-Math.floor(cell/4)+3-cell%4;
   if(remaining<distance||(remaining-distance)%2)return false;
@@ -144,47 +144,67 @@ function certifyWorld(puzzle,world,seed){
  for(let i=0;i<32&&state.status==='running';i++)if(!advance(state))break;
  return state.status==='won';
 }
+function prepareWorldPuzzle(world,path,solved,rng,fallback=false){
+ const typesList=Object.keys(ports),protectedTiles=new Set([...path.slice(0,3),15]);
+ const route=path.slice(3,-1);
+ if(world==='nether'){
+  const types=Array(16).fill(null);for(const i of protectedTiles)types[i]=solved[i];
+  // Supply no longer spells out the route. Park spare pieces off the route and
+  // decide where future corners/straights belong before the cart reaches them.
+  const spares=shuffled(Array.from({length:16},(_,i)=>i).filter(i=>!path.includes(i)),rng).slice(0,2);
+  const placement=shuffled([...route,...spares],rng);
+  return {types,path,queue:placement.map(i=>solved[i]||typesList[Math.floor(rng()*typesList.length)]),solution:placement.map(index=>({kind:'place',index}))};
+ }
+ const types=solved.map(type=>type||typesList[Math.floor(rng()*typesList.length)]),state=stateFromTypes(types),undo=[];
+ if(world==='grass'){
+  const editable=Array.from({length:16},(_,i)=>i).filter(i=>!protectedTiles.has(i));
+  if(fallback){
+   const outside=editable.filter(i=>!path.includes(i));
+   for(const [n,index] of route.slice(0,4).entries()){
+    const other=outside[n];state.tiles[other].type=state.tiles[index].type==='h'?'v':'h';
+    swap(state,index,other);undo.push({kind:'swap',a:index,b:other});
+   }
+  }else{
+   const count=6+Math.floor(rng()*3);
+   for(let n=0;n<count;n++){
+    const a=route[Math.floor(rng()*route.length)];
+    const choices=editable.filter(i=>i!==a&&state.tiles[i].type!==state.tiles[a].type);
+    if(!choices.length)continue;
+    const b=choices[Math.floor(rng()*choices.length)];swap(state,a,b);undo.push({kind:'swap',a,b});
+   }
+  }
+ }else{
+  const chosen=new Set(shuffled(route.filter(i=>state.tiles[i].type!=='cross'),rng).slice(0,5+Math.floor(rng()*2)));
+  // Repair proof follows route order, so human-paced taps finish before entry locking.
+  for(const index of route.filter(i=>chosen.has(i))){
+   const original=state.tiles[index].type,turns=1+Math.floor(rng()*(original==='h'||original==='v'?1:3));
+   for(let n=0;n<turns;n++)rotate(state,index);
+   let type=state.tiles[index].type;
+   do{undo.push({kind:'rotate',index});type=rotateType(type)}while(type!==original);
+  }
+ }
+ return {types:state.tiles.map(t=>t.type),path,solution:world==='grass'?undo.reverse():undo};
+}
 export function generateWorldPuzzle(world,seed){
  if(world==='end'){
   const puzzle=generatePuzzle(seed);return {...puzzle,solution:puzzle.solution.map(index=>({kind:'slide',index}))};
  }
  const salt={grass:0x4a371b29,mine:0x1ba92f35,nether:0x7246d01f}[world];
  if(salt===undefined)throw Error('Unknown world');
- const rng=seededRandom(seed^salt),typesList=Object.keys(ports);
- for(let attempt=0;attempt<64;attempt++){
-  const path=randomPath(rng),solved=solvedTypes(path,rng);
-  const protectedTiles=new Set([...path.slice(0,3),15]);
-  let puzzle;
-  if(world==='nether'){
-   const types=Array(16).fill(null);for(const i of protectedTiles)types[i]=solved[i];
-   puzzle={types,path,queue:path.slice(3,-1).map(i=>solved[i]),solution:path.slice(3,-1).map(index=>({kind:'place',index}))};
-  }else{
-   const types=solved.map(type=>type||typesList[Math.floor(rng()*typesList.length)]),state=stateFromTypes(types),undo=[];
-   const editable=Array.from({length:16},(_,i)=>i).filter(i=>!protectedTiles.has(i));
-   if(world==='grass'){
-    for(let i=0;i<4;i++){
-     const pair=shuffled(editable,rng).slice(0,2);
-     if(state.tiles[pair[0]].type===state.tiles[pair[1]].type)continue;
-     if(swap(state,...pair))undo.push({kind:'swap',a:pair[0],b:pair[1]});
-    }
-   }else{
-    // Three changed cells need at most nine taps to restore, within the safe lead-in.
-    const candidates=shuffled(editable.filter(i=>state.tiles[i].type!=='cross'),rng).slice(0,3);
-    for(const index of candidates){
-     const original=state.tiles[index].type;rotate(state,index);
-     let type=state.tiles[index].type;
-     do{undo.push({kind:'rotate',index});type=rotateType(type)}while(type!==original);
-    }
-   }
-   puzzle={types:state.tiles.map(t=>t.type),path,solution:world==='grass'?undo.reverse():undo};
-  }
+ const rng=seededRandom(seed^salt);
+ for(let attempt=0;attempt<256;attempt++){
+  const path=randomPath(rng,world==='grass'?[8,10]:[10,12]),solved=solvedTypes(path,rng);
+  const puzzle=prepareWorldPuzzle(world,path,solved,rng);
+  const blockers=path.slice(3,-1).filter(i=>puzzle.types[i]!==solved[i]).length;
+  if(world==='grass'&&(blockers<4||puzzle.solution.length<4))continue;
+  if(world==='mine'&&(blockers<5||new Set(puzzle.solution.map(a=>a.index)).size<5))continue;
   if(puzzle.solution.length&&!(world!=='nether'&&automaticallyWins(puzzle.types))&&certifyWorld(puzzle,world,seed))return {...puzzle,seed:seed>>>0};
  }
- const path=[0,1,2,3,7,11,15],types=solvedTypes(path,rng).map(type=>type||'h');
- types[6]='h';
- if(world==='grass'){[types[3],types[6]]=[types[6],types[3]];return {seed:seed>>>0,types,path,solution:[{kind:'swap',a:3,b:6}],fallback:true}}
- if(world==='mine'){types[3]=rotateType(types[3]);return {seed:seed>>>0,types,path,solution:Array.from({length:3},()=>({kind:'rotate',index:3})),fallback:true}}
- throw Error('Unable to generate placement puzzle');
+ const path=[0,1,2,3,7,6,5,9,10,11,15],solved=solvedTypes(path,rng);
+ for(const i of path)if(solved[i]==='cross')solved[i]=i===0?'h':(direction(i,path[path.indexOf(i)-1])%2?'h':'v');
+ const puzzle=prepareWorldPuzzle(world,path,solved,rng,true);
+ if(!certifyWorld(puzzle,world,seed))throw Error('World fallback must remain solvable');
+ return {...puzzle,seed:seed>>>0,fallback:true};
 }
 export function applyWorldAction(s,action){return worldOperation(s,action)}
 export function create(level=0,{seed=Math.floor(Math.random()*4294967296),world='end'}={}){

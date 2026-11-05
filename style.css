@@ -332,3 +332,5 @@ body.booting> :not(.boot-screen):not(.version-badge){visibility:hidden}
 .credits-list dt{margin:0 0 8px;font-size:12px;color:#b3b3a7;letter-spacing:2px}
 .credits-list dd{margin:0;color:#f5f4e8;font-size:clamp(15px,4vw,20px);line-height:1.6;overflow-wrap:anywhere;text-shadow:2px 2px #151515}
 @media(orientation:landscape) and (max-height:520px){.credits-screen{padding:28px 18px}.credits-panel{padding:18px 24px}.credits-panel h1{margin-bottom:18px}.credits-list{gap:12px;margin-bottom:20px}.credits-list dt{margin-bottom:2px}.credits-list dd{font-size:16px}.title-menu-bottom{gap:7px}.title-menu-bottom .mc-button{padding:6px;font-size:14px}}
+
+.world-choice>span.world-difficulty{position:absolute;left:7px;top:6px;font:9px ui-monospace,monospace;color:#d9decf;letter-spacing:1px}

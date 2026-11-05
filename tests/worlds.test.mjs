@@ -61,3 +61,19 @@ test('pending rewards retain their world and an old save without a world still r
  const storage=memory(),s=createCollectionStore(storage,()=>.5);s.beginReward('nether-win',23,'nether');s.tapBlock();
  const restored=createCollectionStore(storage);assert.equal(restored.state.reward.world,'nether');assert.equal(restored.state.reward.hits,1);
 });
+
+test('difficulty labels rise 1–4 and repairs affect the route instead of harmless off-route panels',()=>{
+ assert.deepEqual(Object.values(WORLDS).map(w=>w.difficulty),[1,2,3,4]);
+ for(let seed=0;seed<100;seed++)for(const world of ['grass','mine','nether']){
+  const puzzle=generateWorldPuzzle(world,seed),s=create(0,{seed,world});start(s);
+  for(const action of puzzle.solution)assert.ok(applyWorldAction(s,action));
+  assert.ok(puzzle.path.length-1>=(world==='grass'?8:10));
+  if(world==='nether'){
+   const offRoute=puzzle.solution.filter(a=>!puzzle.path.includes(a.index));assert.equal(offRoute.length,2);
+   assert.equal(puzzle.solution.length,puzzle.path.length-4+2);
+  }else{
+   const mismatches=puzzle.path.slice(3,-1).filter(i=>puzzle.types[i]!==s.tiles[i].type).length;
+   assert.ok(mismatches>=(world==='grass'?4:5),world+' must require route repairs');
+  }
+ }
+});

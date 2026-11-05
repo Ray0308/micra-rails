@@ -302,3 +302,9 @@ body[data-world="nether"]{--floor-texture:url("assets/floor-nether.png?v=0.4.0")
 body[data-world="end"]{--floor-texture:url("assets/floor-end.png?v=0.4.0");--floor-color:#c9ca8a}
 body[data-world] .play-console button.tile:not(.placement-slot),body[data-world] .play-console button.tile:not(.placement-slot):hover{background:var(--floor-color) var(--floor-texture) center / cover;background-blend-mode:normal}
 body[data-world] .queue-piece{background:var(--floor-color) var(--floor-texture) center / cover}
+
+/* Rail geometry now comes entirely from three matched image sprites. */
+.tile .rail-image,.queue-piece .rail-image{position:absolute;inset:0;display:block;width:100%;height:100%;max-width:none;object-fit:fill;image-rendering:pixelated;pointer-events:none;user-select:none;-webkit-user-drag:none;transform-origin:50% 50%}
+
+.rail-art{position:absolute;inset:0;display:block;pointer-events:none;user-select:none;transform-origin:50% 50%}
+.rail-slice{position:absolute;display:block;background-repeat:no-repeat;image-rendering:pixelated;pointer-events:none}

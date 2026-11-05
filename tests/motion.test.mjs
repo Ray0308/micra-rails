@@ -91,3 +91,14 @@ test('the Creeper keeps walking and can ignite and explode while the cart brake 
  run(s,m,850,{delay:0,bInterval:CREEPER_STEP_MS});assert.equal(m.aDistance,1);assert.ok(m.bDistance>.49);assert.equal(m.movingB,true);
  run(s,m,5000,{delay:0,bInterval:CREEPER_STEP_MS});assert.equal(s.status,'lost');assert.equal(m.aDistance,1);assert.ok(m.fuse>=3000);
 });
+
+test('connected boundaries and corners never put the running cart into a waiting state',()=>{
+ const [s,m]=ready(true);let previous=0;
+ for(let frame=0;frame<960&&s.status==='running';frame++){
+  updateMotion(s,m,16,{delay:1e9,aInterval:2400});
+  assert.ok(m.aDistance>previous,'connected rail must advance every frame');
+  if(s.status==='running')assert.equal(m.movingA,true);
+  previous=m.aDistance;
+ }
+ assert.equal(s.status,'won');
+});

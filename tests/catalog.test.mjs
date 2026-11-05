@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createCollectionStore,cleanCollection,rollCard} from '../catalog-model.mjs';
+import {createCollectionStore,cleanCollection,rollCard,REVIEW_BACKUP_KEY} from '../catalog-model.mjs';
 import {SAVE_KEY,CHARACTERS,BREAK_HITS} from '../catalog-data.mjs';
 function memory(initial){const data=new Map(initial?[[SAVE_KEY,JSON.stringify(initial)]]:[]);return {getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v)}}
 
@@ -54,4 +54,21 @@ test('unavailable storage leaves the mining reward playable in memory',()=>{
  const store=createCollectionStore({getItem(){throw Error('denied')},setItem(){throw Error('full')}},()=>.5);
  store.beginReward('private-mode',0);for(let i=0;i<BREAK_HITS;i++)store.tapBlock();
  assert.equal(store.state.draws,1);assert.equal(store.saveError,true);
+});
+
+
+test('review unlock grants every normal/shiny card once and preserves existing counts',()=>{
+ const storage=memory({counts:{steve:1,alex:6,pig:2},shiny:{alex:2,pig:2},draws:8,duplicates:1});
+ const store=createCollectionStore(storage);assert.ok(store.unlockForReview());
+ for(const c of CHARACTERS){assert.ok(store.state.shiny[c.id]>=1);assert.ok(store.state.counts[c.id]>store.state.shiny[c.id])}
+ assert.equal(store.state.counts.alex,6);assert.equal(store.state.shiny.alex,2);assert.equal(store.state.counts.pig,3);assert.equal(store.state.shiny.pig,2);assert.equal(store.state.draws,8);
+ const before=JSON.stringify(store.state);assert.equal(store.unlockForReview(),false);assert.equal(JSON.stringify(store.state),before);
+ const restored=createCollectionStore(storage);assert.equal(restored.unlockForReview(),false);assert.deepEqual(restored.state,JSON.parse(before));
+ const backup=JSON.parse(storage.getItem(REVIEW_BACKUP_KEY));assert.deepEqual(backup.counts,{steve:1,alex:6,pig:2});assert.equal(backup.draws,8);
+});
+
+test('review unlock keeps an unclaimed mining reward at the same crack stage',()=>{
+ const storage=memory(),store=createCollectionStore(storage,()=>.5);store.beginReward('review-pending',7);store.tapBlock();store.tapBlock();const id=store.state.reward.id;
+ store.unlockForReview();assert.equal(store.state.reward.hits,2);assert.equal(store.state.reward.level,7);assert.equal(store.state.draws,0);
+ const count=store.state.counts[id];for(let i=0;i<3;i++)store.tapBlock();assert.equal(store.state.counts[id],count+1);assert.equal(store.state.draws,1);
 });

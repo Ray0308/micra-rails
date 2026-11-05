@@ -1,6 +1,6 @@
 import {createJourneyStore,stageName} from './journey.mjs?v=0.2.5';
 import {createAudioController} from './audio.mjs?v=0.2.6';
-import {createCatalogUI} from './catalog-ui.mjs?v=0.2.5';
+import {createCatalogUI} from './catalog-ui.mjs?v=0.2.7';
 import {create,slide,start,ports,neighbor} from './engine.mjs?v=0.2.5';
 import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS,CREEPER_STEP_MS} from './motion.mjs?v=0.2.6';
 

@@ -1,4 +1,6 @@
 import {CHARACTERS,BY_ID,SAVE_KEY,BREAK_HITS} from './catalog-data.mjs?v=0.1.8';
+export const REVIEW_BACKUP_KEY='micra-rails.collection.review-backup.v0.2.7';
+const REVIEW_TAG='all-cards-v0.2.7';
 const normal=CHARACTERS.filter(c=>c.category!=='bosses');
 const bosses=CHARACTERS.filter(c=>c.category==='bosses');
 const positive=n=>Number.isSafeInteger(n)&&n>0;
@@ -17,6 +19,7 @@ export function cleanCollection(input){
  clean.draws=Number.isSafeInteger(input.draws)&&input.draws>=0?input.draws:0;
  clean.duplicates=Number.isInteger(input.duplicates)?Math.max(0,Math.min(2,input.duplicates)):0;
  clean.lastRun=typeof input.lastRun==='string'?input.lastRun:null;
+ if(input.reviewUnlock===REVIEW_TAG)clean.reviewUnlock=REVIEW_TAG;
  const r=input.reward;
  if(r&&typeof r.id==='string'&&Object.hasOwn(BY_ID,r.id)&&typeof r.runId==='string'&&typeof r.shiny==='boolean'&&Number.isSafeInteger(r.level)&&r.level>=0&&r.level<Number.MAX_SAFE_INTEGER){
   if(r.phase==='mining'&&Number.isInteger(r.hits)&&r.hits>=0&&r.hits<BREAK_HITS){
@@ -52,6 +55,19 @@ export function createCollectionStore(storage,rng=Math.random){
  }
  return {
   get state(){return state},get saveError(){return saveError},
+  unlockForReview(){
+   if(state.reviewUnlock===REVIEW_TAG)return false;
+   // Keep the pre-review collection so the temporary grant can be reversed later.
+   try{if(storage&&!storage.getItem(REVIEW_BACKUP_KEY))storage.setItem(REVIEW_BACKUP_KEY,JSON.stringify(state))}catch{}
+   for(const c of CHARACTERS){
+    let total=state.counts[c.id]||0,shiny=state.shiny[c.id]||0;
+    if(total-shiny<1)total+=1-(total-shiny);
+    if(shiny<1){total+=1-shiny;shiny=1}
+    state.counts[c.id]=total;state.shiny[c.id]=shiny;
+   }
+   if(state.reward?.phase==='revealed')state.reward.count=state.counts[state.reward.id];
+   state.reviewUnlock=REVIEW_TAG;persist();return true;
+  },
   beginReward(runId,level){
    if(state.reward)return state.reward;
    if(state.lastRun===runId)return null;

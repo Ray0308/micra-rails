@@ -104,6 +104,7 @@ function positionActors(){
 }
 
 function railArtwork(type,key){
+ if(type==='v'||type==='h')return `<svg viewBox="0 0 32 32" aria-hidden="true" shape-rendering="crispEdges"><defs><clipPath id="straight-${key}"><rect x="10.7" y="0" width="1.6" height="32"/><rect x="19.7" y="0" width="1.6" height="32"/>${[2.3,9.3,16.3,23.3,30.3].map(y=>`<rect x="9.85" y="${y}" width="12.3" height="3.4"/>`).join('')}</clipPath></defs><g${type==='h'?' transform="rotate(90 16 16)"':''}><image href="assets/rail-straight.png?v=0.4.0" x="8" y="0" width="16" height="32" preserveAspectRatio="none" clip-path="url(#straight-${key})"/></g></svg>`;
  // A finer pixel grid keeps the rails slim while preserving full-edge connections.
  const dirs=ports[type],rects=[];
  const rayDistance=(x,y,d)=>{const [ex,ey]=[[16,0],[32,16],[16,32],[0,16]][d];const ax=Math.min(16,ex),bx=Math.max(16,ex),ay=Math.min(16,ey),by=Math.max(16,ey);return Math.max(Math.max(ax-x,0,x-bx),Math.max(ay-y,0,y-by));};
@@ -111,8 +112,8 @@ function railArtwork(type,key){
   const px=x+.5,py=y+.5,dist=Math.min(...dirs.map(d=>rayDistance(px,py,d)));
   let fill=null;
   const sleeper=dirs.some(d=>{const along=[16-py,px-16,py-16,16-px][d],across=d%2?Math.abs(py-16):Math.abs(px-16);return along>=0&&across<8&&(Math.floor(along)%8<2);});
-  if(sleeper)fill=(x+y)%5===0?'#b58a52':(x*3+y)%4===0?'#695034':'#92703f';
-  if(dist>=4&&dist<6)fill=dist<5?((x+y)%7===0?'#aaa99b':'#d0cfc0'):((x+y)%5===0?'#77796e':'#8f9387');
+  if(sleeper)fill=(x+y)%5===0?'#aa8e58':(x*3+y)%4===0?'#514530':'#806b40';
+  if(dist>=4&&dist<6)fill=dist<5?((x+y)%7===0?'#aaa99b':'#b7b8b4'):((x+y)%5===0?'#77796e':'#7d817f');
   if(fill)rects.push(`<rect x="${x}" y="${y}" width="1" height="1" fill="${fill}"/>`);
  }
  return `<svg viewBox="0 0 32 32" aria-hidden="true" shape-rendering="crispEdges">${rects.join('')}</svg>`;

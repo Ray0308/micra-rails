@@ -1,5 +1,5 @@
-import {CATEGORIES,CHARACTERS,BY_ID,BREAK_HITS} from './catalog-data.mjs?v=0.1.6';
-import {createCollectionStore} from './catalog-model.mjs?v=0.1.6';
+import {CATEGORIES,CHARACTERS,BY_ID,BREAK_HITS} from './catalog-data.mjs?v=0.1.7';
+import {createCollectionStore} from './catalog-model.mjs?v=0.1.7';
 const $=id=>document.getElementById(id);
 
 export function createCatalogUI({showScreen,playTone,onContinue,storage}){
@@ -13,7 +13,7 @@ export function createCatalogUI({showScreen,playTone,onContinue,storage}){
   $('collection-save-warning').textContent=store.saveError?'この端末に保存できません。タブを閉じると記録が消えることがあります。':'';
  }
  function art(c){
-  return `<div class="card-portrait ${c.image?'has-image':''}" style="--mob-color:${c.color};--mob-skin:${c.skin}"><div class="pixel-character" aria-hidden="true"><i class="pixel-head"></i><i class="pixel-body"></i><i class="pixel-feet"></i></div>${c.image?`<img data-card-art src="${c.image}?v=0.1.6" alt="${c.name}" draggable="false">`:''}</div>`;
+  return `<div class="card-portrait ${c.image?'has-image':''}" style="--mob-color:${c.color};--mob-skin:${c.skin}"><div class="pixel-character" aria-hidden="true"><i class="pixel-head"></i><i class="pixel-body"></i><i class="pixel-feet"></i></div>${c.image?`<img data-card-art loading="lazy" decoding="async" src="${c.image}?v=0.1.7" alt="${c.name}" draggable="false">`:''}</div>`;
  }
  function bindArt(root){
   root.querySelectorAll('img[data-card-art]').forEach(image=>{

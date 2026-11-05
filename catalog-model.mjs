@@ -1,4 +1,4 @@
-import {CHARACTERS,BY_ID,SAVE_KEY,BREAK_HITS} from './catalog-data.mjs?v=0.1.6';
+import {CHARACTERS,BY_ID,SAVE_KEY,BREAK_HITS} from './catalog-data.mjs?v=0.1.7';
 const normal=CHARACTERS.filter(c=>c.category!=='bosses');
 const bosses=CHARACTERS.filter(c=>c.category==='bosses');
 const positive=n=>Number.isSafeInteger(n)&&n>0;

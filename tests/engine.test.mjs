@@ -1,6 +1,7 @@
+import {fixedBoard as create} from './fixtures.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {create,slide,start,advance,chase} from '../engine.mjs';
+import {slide,start,advance,chase} from '../engine.mjs';
 const reverse=[[6,10,14],[6,10,9,13,14],[6,5,9,10,14]];
 for(let level=0;level<3;level++)test(`stage ${level+1} has a legal solution`,()=>{const s=create(level);for(const i of reverse[level])assert.ok(slide(s,i));start(s);for(let i=0;i<6;i++)assert.ok(advance(s));assert.equal(s.status,'won');assert.deepEqual(s.trail,[0,1,2,3,7,11,15])});
 test('only adjacent unlocked tiles slide',()=>{const s=create();assert.equal(slide(s,15),false);assert.equal(slide(s,0),false);start(s);advance(s);assert.equal(slide(s,1),false)});

@@ -51,12 +51,6 @@ select{padding:9px 30px 9px 12px;cursor:pointer;min-height:42px}
 .play-console button:not(.tile):hover:not(:disabled){background:#85877b;box-shadow:inset 2px 2px #c2c4b2,inset -2px -2px #4d5143,0 1px #10110c}
 .play-console button:not(.tile):active:not(:disabled){background:#676a5e;box-shadow:inset 2px 2px #424638,inset -2px -2px #a0a48f;transform:translateY(1px)}
 .play-console button:not(.tile):disabled{color:#7e8274;background:#46493f;box-shadow:inset 1px 1px #636859,inset -1px -1px #292e23;cursor:default}
-.stage-picker{position:relative;min-width:0;display:flex;align-items:center;justify-content:center}
-.stage-picker::after{content:'▾';position:absolute;right:9px;top:50%;transform:translateY(-50%);color:#a2a590;font-size:12px;pointer-events:none}
-.stage-picker select{width:100%;min-height:44px;margin:0;padding:8px 24px;border:0;box-shadow:none;background:transparent;color:#e9e8dc;text-shadow:1px 2px #171a11;font-size:15px;font-weight:800;text-align:center;text-align-last:center;letter-spacing:3px;appearance:none;-webkit-appearance:none}
-.stage-picker select:disabled{color:#c1c4b0;opacity:1;cursor:default}
-.stage-picker:has(select:disabled)::after{visibility:hidden}
-.stage-picker select option{background:#3b3f33;color:#eeeee4;text-shadow:none}
 .sound-off{position:absolute;right:5px;bottom:4px;font-size:13px;color:#d6a886}
 .game{width:100%}
 .board-wrap{position:relative;margin:6px;padding:6px;background:#322a1d;border:1px solid #12150e;box-shadow:inset 1px 1px #746348,inset -1px -1px #201b11}
@@ -250,11 +244,12 @@ body[data-screen="reward"]::after{background:radial-gradient(ellipse at 50% 42%,
  .play-console .game{display:contents}
  .play-console .game-hud{grid-column:2;grid-row:1;padding:8px;gap:4px;grid-template-columns:40px minmax(0,1fr) 40px;border-bottom:0;border-left:1px solid #171b11}
  .play-console .hud-button{width:40px;height:44px}
- .play-console .stage-picker select{padding:8px 11px 8px 2px;font-size:12px;letter-spacing:0}
- .play-console .stage-picker::after{right:1px;font-size:9px}
  .play-console .board-wrap{grid-column:1;grid-row:1/3;align-self:center}
  .play-console .control-dock{grid-column:2;grid-row:2;display:flex;flex-direction:column;justify-content:center;padding:12px;border-left:1px solid #171b11;border-top:0}
  .play-console .actions{grid-template-columns:1fr 1fr;gap:10px}
  .play-console .actions .primary{grid-column:1/-1;letter-spacing:3px}
  .play-console .game-options{margin-top:12px}
 }
+
+.stage-label{display:flex;align-items:center;justify-content:center;min-height:44px;color:#e9e8dc;text-shadow:1px 2px #171a11;font-size:15px;font-weight:800;letter-spacing:3px}
+@media(orientation:landscape) and (max-height:540px){.play-console .stage-label{font-size:12px;letter-spacing:1px}}

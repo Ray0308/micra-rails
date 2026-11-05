@@ -1,6 +1,8 @@
 // Minimal DOM harness for startup, navigation, continuous frames, and pause behavior.
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {generatePuzzle} from '../engine.mjs';
+import {JOURNEY_KEY} from '../journey.mjs';
 class Element{
  constructor(id){this.id=id;this.dataset={};this.hidden=false;this.innerHTML='';this.clientWidth=400;this.clientHeight=400;this.offsetLeft=10;this.offsetTop=10;this.style={setProperty(k,v){this[k]=v}};const classes=new Set();this.classList={add:x=>classes.add(x),remove:x=>classes.delete(x),toggle:(x,v)=>v?classes.add(x):classes.delete(x),contains:x=>classes.has(x)};this.events={};this.value=id==='pace'?'easy':'0'}
  setAttribute(name,value){this[name]=value}getAttribute(name){return this[name]}querySelectorAll(){return []}replaceChildren(){this.innerHTML=''}showModal(){this.open=true}close(){this.open=false}animate(){}addEventListener(name,fn){this.events[name]=fn}focus(){}querySelector(){return new Element('button')}
@@ -32,13 +34,15 @@ el('sound').onclick();assert.equal(el('sound-off')['aria-pressed'],'true');
 el('options-done').onclick();assert.equal(document.body.dataset.screen,'title');
 el('play-game').onclick();assert.equal(document.body.dataset.screen,'game');
 el('start').onclick();frame(0);
-const initial=parseFloat(el('actor-steve').style.left);
+const initial={x:parseFloat(el('actor-steve').style.left),y:parseFloat(el('actor-steve').style.top)};
 for(let i=1;i<=40;i++)frame(i*16);
-const moved=parseFloat(el('actor-steve').style.left);
-assert.ok(moved>initial&&moved<initial+100,'actor must be between cells, not teleporting');
+const moved={x:parseFloat(el('actor-steve').style.left),y:parseFloat(el('actor-steve').style.top)};
+const travelled=Math.hypot(moved.x-initial.x,moved.y-initial.y);
+assert.ok(travelled>0&&travelled<100,'actor must be between cells, not teleporting');
 el('pause').onclick();for(let i=41;i<=90;i++)frame(i*16);
-assert.equal(parseFloat(el('actor-steve').style.left),moved,'pause must freeze visual position');
-const pauseMoves=el('moves').textContent;slidePanel(6);assert.equal(el('moves').textContent,pauseMoves,'pause must lock rail editing');
+assert.equal(parseFloat(el('actor-steve').style.left),moved.x,'pause must freeze horizontal position');
+assert.equal(parseFloat(el('actor-steve').style.top),moved.y,'pause must freeze vertical position');
+const pauseMoves=el('moves').textContent;slidePanel(generatePuzzle(JSON.parse(saved.get(JOURNEY_KEY)).seed).solution[0]);assert.equal(el('moves').textContent,pauseMoves,'pause must lock rail editing');
 el('back-title').onclick();assert.equal(document.body.dataset.screen,'title');
 el('open-guide').onclick();assert.equal(document.body.dataset.screen,'guide');
 assert.ok(el('catalog-grid').innerHTML.includes('スティーブ'));
@@ -49,13 +53,15 @@ function slidePanel(index){
  el('board').events.pointerdown({target,clientX:0,clientY:0});
  el('board').events.pointerup({clientX:0,clientY:0});
 }
-slidePanel(6);
+const solution=generatePuzzle(JSON.parse(saved.get(JOURNEY_KEY)).seed).solution;
+assert.ok(!elements.has('level'),'stage selection must be removed');
+slidePanel(solution[0]);
 assert.equal(el('moves').textContent,'0 手','rails must not move before departure');
 assert.ok(!/class="tile[^\"]* movable/.test(el('board').innerHTML),'ready rails must not appear movable');
 el('start').onclick();
-slidePanel(6);
-assert.equal(el('moves').textContent,'1 手','rails must move after departure');
-for(let time=2000;time<18000;time+=100)frame(time);
+for(const index of solution)slidePanel(index);
+assert.equal(el('moves').textContent,solution.length+' 手','rails must move after departure');
+for(let time=2000;time<26000;time+=100)frame(time);
 assert.equal(document.body.dataset.screen,'reward','winning must lead to block mining');
 assert.equal(el('reward-screen').dataset.phase,'mining');
 for(let i=0;i<4;i++)el('mine-block').onclick();
@@ -70,5 +76,5 @@ el('reward-book').onclick();assert.equal(document.body.dataset.screen,'guide');
 el('catalog-back').onclick();assert.equal(document.body.dataset.screen,'reward');
 await new Promise(resolve=>setTimeout(resolve,950));
 el('reward-next').onclick();assert.equal(document.body.dataset.screen,'game');
-assert.equal(el('level').value,'1');assert.equal(JSON.parse(saved.get(key)).reward,null);
+assert.equal(el('stage-number').textContent,'坑道 02');assert.equal(JSON.parse(saved.get(JOURNEY_KEY)).level,1);assert.equal(JSON.parse(saved.get(key)).reward,null);
 console.log('PASS: options navigation, volume display/save, shared sound toggle, startup, movement, pause, clear → mining → card → catalog → next stage');

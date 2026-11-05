@@ -18,7 +18,7 @@ export function cleanCollection(input){
  clean.duplicates=Number.isInteger(input.duplicates)?Math.max(0,Math.min(2,input.duplicates)):0;
  clean.lastRun=typeof input.lastRun==='string'?input.lastRun:null;
  const r=input.reward;
- if(r&&typeof r.id==='string'&&Object.hasOwn(BY_ID,r.id)&&typeof r.runId==='string'&&typeof r.shiny==='boolean'&&Number.isInteger(r.level)&&r.level>=0&&r.level<3){
+ if(r&&typeof r.id==='string'&&Object.hasOwn(BY_ID,r.id)&&typeof r.runId==='string'&&typeof r.shiny==='boolean'&&Number.isSafeInteger(r.level)&&r.level>=0&&r.level<Number.MAX_SAFE_INTEGER){
   if(r.phase==='mining'&&Number.isInteger(r.hits)&&r.hits>=0&&r.hits<BREAK_HITS){
    clean.reward={id:r.id,runId:r.runId,shiny:r.shiny,level:r.level,phase:'mining',hits:r.hits};
   }else if(r.phase==='revealed'&&clean.counts[r.id]&&(!r.shiny||clean.shiny[r.id])){
@@ -55,7 +55,7 @@ export function createCollectionStore(storage,rng=Math.random){
   beginReward(runId,level){
    if(state.reward)return state.reward;
    if(state.lastRun===runId)return null;
-   if(typeof runId!=='string'||!Number.isInteger(level)||level<0||level>=3)throw Error('Invalid reward context');
+   if(typeof runId!=='string'||!Number.isSafeInteger(level)||level<0||level>=Number.MAX_SAFE_INTEGER)throw Error('Invalid reward context');
    state.reward={...rollCard(state,rng),runId,level,hits:0,phase:'mining'};
    state.lastRun=runId;persist();return state.reward;
   },

@@ -1,6 +1,7 @@
+import {fixedBoard as create} from './fixtures.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {create,slide,start} from '../engine.mjs';
+import {slide,start} from '../engine.mjs';
 import {createMotion,updateMotion,sampleRoute} from '../motion.mjs';
 
 const safe={delay:1e9};

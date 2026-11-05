@@ -1,7 +1,8 @@
+import {createJourneyStore,stageName} from './journey.mjs?v=0.2.5';
 import {createAudioController} from './audio.mjs?v=0.2.3';
-import {createCatalogUI} from './catalog-ui.mjs?v=0.2.3';
-import {create,slide,start,ports,neighbor} from './engine.mjs?v=0.1.4';
-import {createMotion,updateMotion,sampleRoute} from './motion.mjs?v=0.1.4';
+import {createCatalogUI} from './catalog-ui.mjs?v=0.2.5';
+import {create,slide,start,ports,neighbor} from './engine.mjs?v=0.2.5';
+import {createMotion,updateMotion,sampleRoute} from './motion.mjs?v=0.2.5';
 
 const $=id=>document.getElementById(id);
 const UI_ICONS={"back":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M14 5L7 12L14 19M8 12H20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg>","play":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M8 5L19 12L8 19Z\" fill=\"currentColor\"/></svg>","pause":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M6 5H10V19H6ZM14 5H18V19H14Z\" fill=\"currentColor\"/></svg>","reset":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M19 10A7 7 0 1 0 19 15M19 4V10H13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"miter\"/></svg>","soundOn":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 9H7L12 5V19L7 15H3Z\" fill=\"currentColor\"/><path d=\"M16 8C19 10 19 14 16 16M19 5C24 9 24 15 19 19\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg>","soundOff":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 9H7L12 5V19L7 15H3Z\" fill=\"currentColor\"/><path d=\"M16 9L22 15M22 9L16 15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg>"};
@@ -9,6 +10,7 @@ let state,motion,paused=false,last=null,pointer,runId,collectionUI;
 let audioStorage;
 try{audioStorage=window.localStorage}catch{}
 const audio=createAudioController({storage:audioStorage});
+const journey=createJourneyStore(audioStorage);
 let metrics={width:0,height:0,gap:5};
 const assets={};
 const actors={steve:$('actor-steve'),creeper:$('actor-creeper')};
@@ -57,7 +59,8 @@ function renderActorImage(key){
 
 function reset(){
   runId=globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
-  state=create(Number($('level').value));motion=createMotion(state);
+  const current=journey.state;
+  state=create(current.level,{seed:current.seed});motion=createMotion(state);
   paused=false;last=null;pointer=null;
   $('overlay').hidden=true;$('board').classList.remove('boom');
   render();measureBoard();positionActors();
@@ -110,7 +113,8 @@ function render(){
   $('pause').innerHTML=paused?UI_ICONS.play:UI_ICONS.pause;
   $('pause').setAttribute('aria-label',paused?'つづける':'一時停止');
   $('pause').setAttribute('aria-pressed',String(paused));
-  $('level').disabled=state.status==='running';
+  const currentStageName=stageName(state.level);
+  if($('stage-number').textContent!==currentStageName)$('stage-number').textContent=currentStageName;
   $('message').textContent=paused?'おやすみ中。つづけるボタンで再開。':state.status==='ready'?'出発でトロッコを走らせよう。':state.status==='won'?'脱出成功！':state.status==='lost'?'つかまった！ レールを変えて、もう一度。':motion.fuse?'シュー……！ はやく、はなれて！':motion.elapsed<5500?'トロッコが出発！ もうすぐクリーパーが来る。':'歩いて追いかけてきた！ 右下の駅までレールをつなごう。';
   positionActors();
 }
@@ -140,7 +144,7 @@ $('board').addEventListener('click',e=>{
 });
 
 $('start').onclick=()=>{start(state);last=null;tone(650,.15);render()};
-$('reset').onclick=reset;$('again').onclick=reset;$('level').onchange=reset;
+$('reset').onclick=reset;$('again').onclick=reset;
 $('pause').onclick=()=>{paused=!paused;last=null;render()};
 $('sound').onclick=()=>setSound(!audio.settings.enabled);
 document.addEventListener('visibilitychange',()=>{
@@ -149,7 +153,7 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 function finish(win){
-  if(win){tone(850,.25);render();collectionUI.beginReward(runId,state.level);return;}
+  if(win){tone(850,.25);render();collectionUI.beginReward(runId,state.level);journey.complete(state.level);return;}
   $('overlay').hidden=false;$('result-icon').textContent=win?'🏡':'💥';
   $('result-title').textContent=win?'にげきった！':'ドカーン！';
   $('result-text').textContent=win?`${state.moves}回のスライドで、駅に到着。`:'次はどこにつなごう？ もう一度チャレンジ。';
@@ -181,7 +185,7 @@ function showScreen(name){
 let collectionStorage;
 try{collectionStorage=window.localStorage}catch{}
 collectionUI=createCatalogUI({showScreen,playTone:tone,storage:collectionStorage,audioSettings:()=>audio.settings,onContinue:level=>{
-  $('level').value=String((level+1)%3);reset();showScreen('game');
+  journey.complete(level);reset();showScreen('game');
 }});
 $('play-game').onclick=()=>{if(collectionUI.resumeReward())return;reset();showScreen('game')};
 $('open-guide').onclick=()=>collectionUI.openCollection('title');
@@ -190,4 +194,6 @@ $('options-done').onclick=()=>showScreen('title');
 $('back-title').onclick=()=>showScreen('title');
 document.querySelectorAll('[data-back-title]').forEach(button=>button.onclick=()=>showScreen('title'));
 renderAudioOptions();renderActorImage('steve');renderActorImage('creeper');
+const pendingLevel=collectionUI.pendingLevel();
+if(Number.isSafeInteger(pendingLevel))journey.complete(pendingLevel);
 reset();collectionUI.resumeReward();requestAnimationFrame(tick);

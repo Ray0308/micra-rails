@@ -1,5 +1,5 @@
 import {CATEGORIES,CHARACTERS,BY_ID,BREAK_HITS} from './catalog-data.mjs?v=0.1.8';
-import {createCollectionStore} from './catalog-model.mjs?v=0.1.8';
+import {createCollectionStore} from './catalog-model.mjs?v=0.2.5';
 const $=id=>document.getElementById(id);
 
 export function createCatalogUI({showScreen,playTone,onContinue,storage,audioSettings=()=>({enabled:true,sfx:100})}){
@@ -127,7 +127,7 @@ export function createCatalogUI({showScreen,playTone,onContinue,storage,audioSet
   renderCracks(r.hits);saveWarning();
   if(revealed){
    $('reward-card').classList.toggle('is-shiny',r.shiny);$('reward-card').innerHTML=cardMarkup(c,r.shiny);bindArt($('reward-card'));fragments();
-   $('reward-next').textContent=r.level===2?'もう一度あそぶ':'次の坑道へ';
+   $('reward-next').textContent='次の坑道へ';
    $('reward-next').disabled=true;$('reward-book').disabled=true;
    openingTimer=setTimeout(()=>{
     $('reward-next').disabled=false;$('reward-book').disabled=false;
@@ -154,5 +154,5 @@ export function createCatalogUI({showScreen,playTone,onContinue,storage,audioSet
   if(store.state.reward?.phase==='revealed')store.acknowledge();
   showScreen('title');
  };
- return {beginReward,resumeReward,openCollection,hasReward:()=>Boolean(store.state.reward)};
+ return {beginReward,resumeReward,openCollection,hasReward:()=>Boolean(store.state.reward),pendingLevel:()=>store.state.reward?.level};
 }

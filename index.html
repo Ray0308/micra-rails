@@ -1,7 +1,7 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#24211e"><title>マイクラレールズ REN EDITION — トロッコでにげろ！</title><link rel="stylesheet" href="style.css?v=0.3.2"><meta name="application-name" content="マイクラレールズ"><meta name="apple-mobile-web-app-title" content="マイクラレールズ"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="assets/app-icon.png?v=0.3.2"><link rel="apple-touch-icon" href="assets/app-icon.png?v=0.3.2"><link rel="manifest" href="manifest.webmanifest?v=0.3.2"></head>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#24211e"><title>マイクラレールズ REN EDITION — トロッコでにげろ！</title><link rel="stylesheet" href="style.css?v=0.3.3"><meta name="application-name" content="マイクラレールズ"><meta name="apple-mobile-web-app-title" content="マイクラレールズ"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="icon" type="image/png" href="assets/app-icon.png?v=0.3.3"><link rel="apple-touch-icon" href="assets/app-icon.png?v=0.3.3"><link rel="manifest" href="manifest.webmanifest?v=0.3.3"></head>
 <body data-screen="title">
-<div class="version-badge" aria-label="バージョン 0.3.2">v0.3.2</div>
+<div class="version-badge" aria-label="バージョン 0.3.3">v0.3.3</div>
 <section id="title-screen" class="menu-screen" aria-label="タイトル画面">
   <div class="title-logo"><h1><img src="assets/title-logo-transparent.png" alt="マイクラレールズ" width="1024" height="411"></h1><p class="title-edition">REN EDITION</p><span class="title-splash"><span>Moving by Minecart</span></span></div>
   <nav class="title-menu" aria-label="メインメニュー">
@@ -15,10 +15,10 @@
  <div class="world-panel">
   <h1 id="world-heading">ワールドを選ぶ</h1>
   <div class="world-choices" role="group" aria-label="ワールドを選んで開始">
-   <button id="world-grass" class="world-choice choice-grass" aria-pressed="true"><span class="world-rate">キラ 5%</span><svg class="world-symbol" viewBox="0 0 48 52" aria-hidden="true"><path fill="#537b35" d="M24 3L45 14L24 26L3 14Z"/><path fill="#93643a" d="M3 14L24 26V50L3 38Z"/><path fill="#69462b" d="M24 26L45 14V38L24 50Z"/><path fill="#7fb64c" d="M3 14L24 26V33L3 21Z"/><path fill="#628e39" d="M24 26L45 14V21L24 33Z"/><path fill="#94c463" d="M15 9L24 5L33 9L24 14Z"/></svg><strong>草原</strong><span>2枚を入れ替え</span><small>停車で追跡もストップ</small></button>
-   <button id="world-mine" class="world-choice choice-mine" aria-pressed="false"><span class="world-rate">キラ 8%</span><svg class="world-symbol" viewBox="0 0 48 52" aria-hidden="true"><path fill="#9a9a8f" d="M24 3L45 14L24 26L3 14Z"/><path fill="#6e7169" d="M3 14L24 26V50L3 38Z"/><path fill="#454c46" d="M24 26L45 14V38L24 50Z"/><path fill="#cca25c" d="M10 17L14 19L34 8L30 6ZM19 22L23 24L43 13L39 11Z"/><path fill="#d8dcd2" d="M7 12L28 24L31 22L10 10ZM17 7L38 19L41 17L20 5Z"/></svg><strong>廃坑</strong><span>タップで回転</span><small>地下のなかま出現UP</small></button>
-   <button id="world-nether" class="world-choice choice-nether" aria-pressed="false"><span class="world-rate">キラ 12%</span><svg class="world-symbol" viewBox="0 0 48 52" aria-hidden="true"><path fill="#a64530" d="M24 3L45 14L24 26L3 14Z"/><path fill="#6c2d25" d="M3 14L24 26V50L3 38Z"/><path fill="#3f2424" d="M24 26L45 14V38L24 50Z"/><path fill="#f6b54a" d="M8 21L14 24V32L8 29ZM28 34L34 30V39L28 43Z"/><path fill="#db7040" d="M17 8L24 5L32 9L25 13Z"/></svg><strong>ネザー</strong><span>次の線路を配置</span><small>ネザーのなかま出現UP</small></button>
-   <button id="world-end" class="world-choice choice-end" aria-pressed="false"><span class="world-rate">キラ 18%</span><svg class="world-symbol" viewBox="0 0 48 52" aria-hidden="true"><path fill="#d8d6a0" d="M24 3L45 14L24 26L3 14Z"/><path fill="#b7b185" d="M3 14L24 26V50L3 38Z"/><path fill="#878567" d="M24 26L45 14V38L24 50Z"/><path fill="#3d2e50" d="M19 7L25 4L32 8V19L25 23L19 19Z"/><path fill="#b59bdd" d="M23 10L27 9V13L23 14Z"/></svg><strong>エンド</strong><span>空きマスへスライド</span><small>エンダー系の出現UP</small></button>
+   <button id="world-grass" class="world-choice choice-grass" aria-pressed="true"><span class="world-rate">キラ 5%</span><img class="world-symbol" src="assets/block-grass.jpg" alt="" width="300" height="300"><strong>草原</strong><span>2枚を入れ替え</span><small>停車で追跡もストップ</small></button>
+   <button id="world-mine" class="world-choice choice-mine" aria-pressed="false"><span class="world-rate">キラ 8%</span><img class="world-symbol" src="assets/block-mine.jpg" alt="" width="300" height="300"><strong>廃坑</strong><span>タップで回転</span><small>地下のなかま出現UP</small></button>
+   <button id="world-nether" class="world-choice choice-nether" aria-pressed="false"><span class="world-rate">キラ 12%</span><img class="world-symbol" src="assets/block-nether.jpg" alt="" width="300" height="300"><strong>ネザー</strong><span>次の線路を配置</span><small>ネザーのなかま出現UP</small></button>
+   <button id="world-end" class="world-choice choice-end" aria-pressed="false"><span class="world-rate">キラ 18%</span><img class="world-symbol" src="assets/block-end.jpg" alt="" width="300" height="300"><strong>エンド</strong><span>空きマスへスライド</span><small>エンダー系の出現UP</small></button>
   </div>
   <button id="world-back" class="mc-button">戻る</button>
  </div>
@@ -86,4 +86,4 @@
   </div>
 </section>
 </div>
-</main><script type="module" src="app.mjs?v=0.3.2"></script></body></html>
+</main><script type="module" src="app.mjs?v=0.3.3"></script></body></html>

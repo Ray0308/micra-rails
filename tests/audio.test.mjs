@@ -40,22 +40,22 @@ test('audio context is not created until an enabled user unlock',()=>{
 test('effects route through the effect bus independently of muted music',()=>{
  const f=fixture();f.audio.setVolume('bgm',0);f.audio.setVolume('sfx',40);f.audio.setEnabled(true);f.audio.unlock();
  const ctx=f.instances[0];assert.equal(f.jobs.size,0);f.audio.tone(500,.1);
- assert.equal(ctx.oscs.length,1);assert.equal(ctx.gains.at(-1).connectedTo,ctx.gains[2]);
+ assert.equal(ctx.noises.length,1);assert.equal(ctx.gains.at(-1).connectedTo,ctx.gains[2]);
  assert.equal(ctx.gains[1].gain.value,0);assert.equal(ctx.gains[2].gain.value,.4);
- f.audio.setVolume('sfx',0);f.audio.tone();assert.equal(ctx.oscs.length,1);f.audio.dispose();
+ f.audio.setVolume('sfx',0);f.audio.tone();assert.equal(ctx.noises.length,1);f.audio.dispose();
 });
 
 test('master OFF silences every bus, stops music scheduling, and reuses the context',()=>{
  const f=fixture();f.audio.setEnabled(true);f.audio.unlock();const ctx=f.instances[0];
- assert.equal(ctx.gains[0].gain.value,1);assert.ok(ctx.oscs.length>0);
- f.audio.setEnabled(false);assert.equal(ctx.gains[0].gain.value,0);assert.equal(f.jobs.size,0);assert.ok(ctx.oscs.every(o=>o.stoppedNow));
- const count=ctx.oscs.length;f.audio.tone();assert.equal(ctx.oscs.length,count);
+ assert.equal(ctx.gains[0].gain.value,1);assert.ok(ctx.noises.length>0);
+ f.audio.setEnabled(false);assert.equal(ctx.gains[0].gain.value,0);assert.equal(f.jobs.size,0);assert.ok(ctx.noises.every(o=>o.stoppedNow));
+ const count=ctx.noises.length;f.audio.tone();assert.equal(ctx.noises.length,count);
  f.audio.setEnabled(true);f.audio.unlock();assert.equal(f.instances.length,1);assert.equal(f.jobs.size,1);f.audio.dispose();
 });
 
 test('hidden pages suspend audio and do not emit effects',()=>{
  const f=fixture();f.audio.setEnabled(true);f.audio.unlock();const ctx=f.instances[0];
- f.audio.setVisible(false);const count=ctx.oscs.length;f.audio.tone();assert.equal(ctx.oscs.length,count);assert.equal(ctx.gains[0].gain.value,0);assert.equal(f.jobs.size,0);assert.equal(ctx.suspends,1);
+ f.audio.setVisible(false);const count=ctx.noises.length;f.audio.tone();assert.equal(ctx.noises.length,count);assert.equal(ctx.gains[0].gain.value,0);assert.equal(f.jobs.size,0);assert.equal(ctx.suspends,1);
  f.audio.setVisible(true);assert.equal(ctx.gains[0].gain.value,1);assert.equal(f.jobs.size,1);f.audio.dispose();assert.equal(f.jobs.size,0);assert.ok(ctx.closed);
 });
 
@@ -72,4 +72,24 @@ test('Creeper hiss is a stoppable three-second effect and obeys effect/master mu
  f.audio.hiss();f.audio.setVolume('sfx',0);assert.ok(ctx.noises[1].stoppedNow);
  f.audio.hiss();assert.equal(ctx.noises.length,2);
  f.audio.setVolume('sfx',50);f.audio.hiss();f.audio.setEnabled(false);assert.ok(ctx.noises[2].stoppedNow);f.audio.dispose();
+});
+
+
+test('music and button effects contain audible PCM samples on the same source path as hiss',()=>{
+ const f=fixture();f.audio.setEnabled(true);f.audio.unlock();const ctx=f.instances[0];
+ assert.ok(ctx.noises.length>=2);
+ const musicSamples=ctx.noises[0].buffer.getChannelData(0);
+ assert.ok(Math.max(...musicSamples)>.07,'music amplitude should be audible at normal volume');
+ f.audio.tone(440,.04);const effect=ctx.noises.at(-1),samples=effect.buffer.getChannelData(0);
+ assert.ok(samples.length>=ctx.sampleRate*.1,'short click has a sustained audible envelope');
+ assert.ok(Math.max(...samples)>.14);
+ assert.equal(ctx.gains.at(-1).connectedTo,ctx.gains[2]);
+ f.audio.dispose();
+});
+
+test('mobile audio interruption can restart music scheduling after context resumes',()=>{
+ const f=fixture();f.audio.setEnabled(true);f.audio.unlock();const ctx=f.instances[0];
+ const before=ctx.noises.length;ctx.currentTime=30;ctx.state='running';ctx.onstatechange();
+ assert.ok(ctx.noises.length>before);assert.equal(f.jobs.size,1);
+ f.audio.dispose();
 });

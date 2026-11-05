@@ -1,6 +1,6 @@
 import {WORLDS,isWorld,loadWorld,saveWorld} from './worlds.mjs?v=0.3.1';
 import {createJourneyStore} from './journey.mjs?v=0.2.5';
-import {createAudioController} from './audio.mjs?v=0.2.6';
+import {createAudioController} from './audio.mjs?v=0.4.1';
 import {createCatalogUI} from './catalog-ui.mjs?v=0.3.1';
 import {create,slide,start,ports,neighbor,canEdit,swap,rotate,build,removePlaced} from './engine.mjs?v=0.3.1';
 import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS} from './motion.mjs?v=0.3.1';
@@ -53,6 +53,8 @@ for(const channel of ['bgm','sfx']){
 $('sfx-volume').addEventListener('change',()=>tone(440,.12));
 document.addEventListener('pointerdown',()=>audio.unlock(),{capture:true,passive:true});
 document.addEventListener('keydown',()=>audio.unlock(),{capture:true});
+document.addEventListener('touchend',()=>audio.unlock(),{capture:true,passive:true});
+document.addEventListener('click',()=>audio.unlock(),{capture:true});
 
 function renderActorImage(key){
   if(!actors[key])return;
@@ -193,8 +195,8 @@ $('start').onclick=()=>{
   }else return;
   render();
 };
-$('reset').onclick=reset;$('again').onclick=reset;
-$('pause').onclick=()=>{paused=!paused;last=null;if(paused)stopFuseSound();else if(motion.fuse>0&&!brakeFreezesWorld())beginFuseSound();render()};
+$('reset').onclick=()=>{tone(300,.12);reset()};$('again').onclick=()=>{tone(300,.12);reset()};
+$('pause').onclick=()=>{tone(paused?520:260,.12);paused=!paused;last=null;if(paused)stopFuseSound();else if(motion.fuse>0&&!brakeFreezesWorld())beginFuseSound();render()};
 $('sound').onclick=()=>setSound(!audio.settings.enabled);
 document.addEventListener('visibilitychange',()=>{
   audio.setVisible(!document.hidden);

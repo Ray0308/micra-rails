@@ -6,7 +6,7 @@ export function cleanAudioSettings(value){
 
 // Separate master, music, and effect buses. Context creation always follows a user gesture.
 export function createAudioController({storage,Context=globalThis.AudioContext||globalThis.webkitAudioContext,schedule=setInterval,cancel=clearInterval}={}){
- let settings=cleanAudioSettings(),context,master,music,effects,timer=null,visible=true,unlocked=false,nextTime=0,step=0;
+ let settings=cleanAudioSettings(),context,master,music,effects,timer=null,visible=true,unlocked=false,disposed=false,nextTime=0,step=0;
  const musicVoices=new Set(),hisses=new Set();
  function stopHisses(){for(const stop of [...hisses])stop()}
  try{const raw=storage?.getItem(AUDIO_KEY);if(raw)settings=cleanAudioSettings(JSON.parse(raw))}catch{}
@@ -17,30 +17,38 @@ export function createAudioController({storage,Context=globalThis.AudioContext||
   for(const voice of musicVoices){try{voice.stop()}catch{}}
   musicVoices.clear();
  }
- function note(midi,time,duration,strength=.028){
-  const osc=context.createOscillator(),envelope=context.createGain();
-  osc.type='triangle';osc.frequency.value=440*2**((midi-69)/12);
-  envelope.gain.setValueAtTime(.0001,time);envelope.gain.exponentialRampToValueAtTime(strength,time+.025);
-  envelope.gain.exponentialRampToValueAtTime(.0001,time+duration);
-  osc.connect(envelope).connect(music);musicVoices.add(osc);
-  osc.onended=()=>{musicVoices.delete(osc);osc.disconnect();envelope.disconnect()};
-  osc.start(time);osc.stop(time+duration+.02);
+ function voice(hz,time,duration,strength,bus,musical=false){
+  // PCM sources use the same playback path as the audible Creeper hiss on mobile.
+  const buffer=context.createBuffer(1,Math.ceil(context.sampleRate*duration),context.sampleRate);
+  const samples=buffer.getChannelData(0),attack=musical?.018:.005;
+  for(let i=0;i<samples.length;i++){
+   const t=i/context.sampleRate,phase=2*Math.PI*hz*t;
+   const wave=musical?(.8*Math.sin(phase)+.2*Math.sin(phase*2)):(.72*Math.sin(phase)+.2*Math.sin(phase*2)+.08*Math.sin(phase*3));
+   const envelope=Math.min(1,t/attack)*Math.min(1,(duration-t)/.025)*(musical?Math.exp(-2*t/duration):1);
+   samples[i]=wave*envelope*strength;
+  }
+  const source=context.createBufferSource(),envelope=context.createGain();
+  source.buffer=buffer;source.connect(envelope).connect(bus);
+  if(musical)musicVoices.add(source);
+  source.onended=()=>{musicVoices.delete(source);source.disconnect();envelope.disconnect()};
+  source.start(time);source.stop(time+duration);return source;
  }
+ function note(midi,time,duration,strength=.16){voice(440*2**((midi-69)/12),time,duration,strength,music,true)}
  function fillMusic(){
   if(!context||!visible||!settings.enabled||settings.bgm===0)return;
-  // An original quiet placeholder melody, replaceable with a recorded BGM later.
+  // An original soft melody, replaceable with a recorded BGM later.
   const melody=[64,null,67,null,69,67,null,64,62,null,64,null,67,64,null,62,60,null,64,null,67,64,null,60,62,null,67,null,69,67,null,62];
   const roots=[48,45,41,43];
   if(nextTime<context.currentTime)nextTime=context.currentTime+.03;
   while(nextTime<context.currentTime+.22){
    const index=step%melody.length;
-   if(index%8===0)note(roots[Math.floor(index/8)],nextTime,2.8,.022);
+   if(index%8===0)note(roots[Math.floor(index/8)],nextTime,2.8,.10);
    if(melody[index]!==null)note(melody[index],nextTime,1.5);
    nextTime+=.58;step++;
   }
  }
  function sync(){
-  if(!context)return;
+  if(!context||disposed)return;
   if(!settings.enabled||settings.sfx===0||!visible)stopHisses();
   gain(master.gain,settings.enabled&&visible?1:0);gain(music.gain,settings.bgm/100);gain(effects.gain,settings.sfx/100);
   if(settings.enabled&&visible&&settings.bgm>0&&unlocked){
@@ -48,13 +56,17 @@ export function createAudioController({storage,Context=globalThis.AudioContext||
   }else stopMusic();
  }
  function unlock(){
-  if(!settings.enabled||!visible||!Context)return false;
+  if(disposed||!settings.enabled||!visible||!Context)return false;
   try{
    if(!context){
     context=new Context();master=context.createGain();music=context.createGain();effects=context.createGain();
     master.gain.value=0;music.connect(master);effects.connect(master);master.connect(context.destination);
+    context.onstatechange=()=>{if(!disposed&&context.state==='running'&&visible&&settings.enabled){stopMusic();nextTime=context.currentTime+.03;sync()}};
    }
-   unlocked=true;context.resume()?.catch?.(()=>{});sync();return true;
+   unlocked=true;
+   const resumed=context.resume();
+   resumed?.then?.(()=>{if(!disposed&&visible&&settings.enabled){nextTime=Math.max(nextTime,context.currentTime+.03);sync()}})?.catch?.(()=>{});
+   sync();return true;
   }catch{return false}
  }
  return {
@@ -65,11 +77,7 @@ export function createAudioController({storage,Context=globalThis.AudioContext||
   setVisible(value){visible=Boolean(value);sync();if(!visible)context?.suspend()?.catch?.(()=>{});else if(unlocked&&settings.enabled)context?.resume()?.catch?.(()=>{})},
   tone(hz=300,duration=.08){
    if(!settings.enabled||settings.sfx===0||!visible||!unlock())return;
-   const osc=context.createOscillator(),envelope=context.createGain(),time=context.currentTime;
-   osc.type='square';osc.frequency.value=hz;
-   envelope.gain.setValueAtTime(.035,time);envelope.gain.exponentialRampToValueAtTime(.0001,time+duration);
-   osc.connect(envelope).connect(effects);
-   osc.onended=()=>{osc.disconnect();envelope.disconnect()};osc.start(time);osc.stop(time+duration);
+   voice(hz,context.currentTime,Math.max(.10,duration),.20,effects);
   },
   hiss(duration=3){
    if(!settings.enabled||settings.sfx===0||!visible||!unlock())return ()=>{};
@@ -86,6 +94,6 @@ export function createAudioController({storage,Context=globalThis.AudioContext||
    source.onended=()=>{ended=true;hisses.delete(stop);source.disconnect();filter.disconnect();envelope.disconnect()};
    hisses.add(stop);source.start(time);source.stop(time+length);return stop;
   },
-  dispose(){stopHisses();stopMusic();context?.close()?.catch?.(()=>{})},
+  dispose(){disposed=true;stopHisses();stopMusic();context?.close()?.catch?.(()=>{})},
  };
 }

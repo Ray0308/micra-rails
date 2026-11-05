@@ -3,17 +3,39 @@
 
 .cart{position:absolute;z-index:4;left:19%;top:60%;width:62%;height:24%;background:linear-gradient(#d2d8d7 0 14%,#7c8588 14% 76%,#484e54 76%);border:2px solid #434b4c;box-shadow:0 4px 0 -1px #202827;pointer-events:none}.character{top:13%}.house{background:#344833;padding:0 4px;border:1px solid #c5e68c}
 
-/* Scenic background stays separate from the sharp game layer. */
+
+/* The scenery belongs to the title and menu screens. */
+[hidden]{display:none!important}
 html{min-height:100%;background:#172b25}
 body{min-height:100vh;min-height:100svh;background:transparent;isolation:isolate}
 body::before{content:'';position:fixed;inset:-12px;z-index:-2;background:#172b25 url('assets/background.jpg') center center / cover no-repeat;filter:blur(3px);pointer-events:none}
-body::after{content:'';position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(10,20,17,.32),rgba(10,20,17,.65));pointer-events:none}
-header{padding:12px 14px;background:#11251ed9;border:1px solid #8ba47b55;border-radius:8px}
-.title{padding:20px;background:#102219c9;border:1px solid #a3bd8555;border-radius:10px;box-shadow:0 10px 32px #0003}
-.logo-title{margin:16px 0 22px;line-height:0;font-size:inherit}
-.logo-title img{display:block;width:100%;height:auto;border-radius:5px}
-.game{padding:14px;background:#102219e8;border:1px solid #8ba47b66;border-radius:12px;box-shadow:0 14px 40px #0005}
-.guide{padding:20px;background:#102219df;border:1px solid #8ba47b55;border-radius:10px}
-.title>p:last-child,.guide p,.status p{color:#e0e8da}
-footer{color:#e1e9dc;text-shadow:0 1px 4px #000}
-@media(max-width:420px){.game{padding:10px}.title{padding:14px}.guide{padding:14px;grid-template-columns:1fr;gap:8px}.guide p{margin:5px 0}.board-wrap{padding:7px}#board{gap:4px}}
+body::after{content:'';position:fixed;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(10,20,17,.08),rgba(10,20,17,.28));pointer-events:none}
+body[data-screen="game"]{background:#172b25}
+body[data-screen="game"]::before,body[data-screen="game"]::after{display:none}
+.menu-screen{min-height:100vh;min-height:100svh;width:100%;padding:clamp(24px,6svh,64px) 24px max(20px,env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;justify-content:center}
+.title-logo{width:min(820px,96%);margin:0 auto clamp(34px,9svh,110px);mix-blend-mode:multiply}
+.title-logo h1{margin:0;font-size:inherit;line-height:0}
+.title-logo img{display:block;width:100%;height:auto}
+.title-menu{width:min(440px,88%);display:grid;gap:14px}
+.mc-button{width:100%;min-height:56px;padding:12px 20px;border:3px solid #171717;border-radius:0;background:linear-gradient(#8b8b8b,#696969);box-shadow:inset 3px 3px 0 #bababa,inset -3px -3px 0 #424242,0 3px 0 #0005;color:white;font-size:clamp(17px,2.6vw,22px);font-weight:700;letter-spacing:3px;text-shadow:2px 2px #303030;touch-action:manipulation}
+.mc-button:hover,.mc-button:focus-visible{background:linear-gradient(#a0a98b,#7b8866);border-color:#e0e8bd;outline:none;box-shadow:inset 3px 3px 0 #d5dabb,inset -3px -3px 0 #4e5b3d,0 3px 0 #0005}
+.mc-button:active{transform:translateY(2px);background:#687453}
+.title-footer{position:absolute;bottom:max(16px,env(safe-area-inset-bottom));left:20px;right:20px;display:flex;justify-content:space-between;gap:16px;margin:0;color:#fff;font-size:11px;text-shadow:1px 2px 2px #000}
+#title-screen{position:relative;padding-bottom:72px}
+.secondary-screen{background:#0d1b1a55;padding-top:24px;padding-bottom:24px}
+.menu-panel{width:min(660px,100%);padding:24px;background:#182a23f5;border:3px solid #a9af9c;box-shadow:0 8px 32px #0006}
+.menu-panel h1{font:700 28px/1.4 ui-rounded,Meiryo,sans-serif;text-align:center;margin:0 0 8px;letter-spacing:3px}
+.panel-intro{text-align:center;color:#c9d6bf;font-size:12px;margin:0 0 24px}
+.encyclopedia{display:grid;gap:18px;margin-bottom:24px}
+.encyclopedia article{display:flex;gap:16px;align-items:center;padding-bottom:14px;border-bottom:1px solid #617453}
+.encyclopedia h2{font-size:15px;margin:0 0 6px;color:#d1e8ac}
+.encyclopedia p{font-size:12px;line-height:1.8;margin:0;color:#dce5d4}
+.dex-art{width:52px;min-width:52px;height:52px;display:grid;place-items:center;background:#72563b;border:3px solid #b1b8a0;color:#d6d9d3;font-size:36px;text-shadow:2px 2px #333}
+.dex-steve{background:#33929a;color:#d2a17c}.dex-creeper{background:#7bb346;color:#152a15}
+.exit-panel{text-align:center}.exit-panel p{line-height:1.8;margin:20px 0 28px;font-size:14px}
+#game-screen{display:block;max-width:620px;padding-top:16px}
+#game-screen header{gap:10px;margin-bottom:20px}.back-title{font-size:12px;padding:10px}.game-name{font-size:13px;font-weight:700;flex:1;text-align:center}
+#game-screen .game{margin-top:0;width:100%}
+#game-screen .guide{margin-top:28px}
+@media(max-width:420px){.title-menu{width:92%;gap:12px}.menu-screen{padding-left:16px;padding-right:16px}.menu-panel{padding:18px}.title-footer{font-size:9px}.mc-button{min-height:54px}.encyclopedia article{gap:12px}.game-name{font-size:11px}}
+@media(orientation:landscape) and (max-height:520px){#title-screen{padding-top:16px;padding-bottom:40px}.title-logo{width:min(400px,50vw);margin-bottom:16px}.title-menu{width:320px;gap:7px}.mc-button{min-height:40px;padding:6px 18px;font-size:16px}.title-footer{bottom:10px}}

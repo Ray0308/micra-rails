@@ -296,12 +296,9 @@ body[data-world="end"] .play-console .tile.empty{background:repeating-linear-gra
 /* Original block icons: clip the white corners without altering the source artwork. */
 .world-symbol{width:64px;height:64px;object-fit:contain;clip-path:polygon(50% .7%,94.7% 22.7%,94.7% 76.7%,50% 99.3%,5.3% 76.7%,5.3% 22.7%);image-rendering:pixelated}
 /* Preserve each world material after a rail locks; the rivet still marks fixed panels. */
-body[data-world="grass"]{--floor-texture:url("assets/floor-grass.png");--floor-color:#506e36}
+body[data-world="grass"]{--floor-texture:url("assets/floor-grass.png?v=0.3.9");--floor-color:#559333}
 body[data-world="mine"]{--floor-texture:url("assets/floor-mine.png");--floor-color:#737373}
 body[data-world="nether"]{--floor-texture:url("assets/floor-nether.png");--floor-color:#723b3b}
 body[data-world="end"]{--floor-texture:url("assets/floor-end.png");--floor-color:#c9ca8a}
 body[data-world] .play-console button.tile:not(.placement-slot),body[data-world] .play-console button.tile:not(.placement-slot):hover{background:var(--floor-color) var(--floor-texture) center / cover;background-blend-mode:normal}
 body[data-world] .queue-piece{background:var(--floor-color) var(--floor-texture) center / cover}
-
-/* Bright grass material: blend only the floor, leaving rail and actor colors intact. */
-body[data-world="grass"] .play-console button.tile:not(.placement-slot),body[data-world="grass"] .play-console button.tile:not(.placement-slot):hover,body[data-world="grass"] .queue-piece{background-image:linear-gradient(#42b52b99,#42b52b99),var(--floor-texture);background-color:#659b35;background-size:cover;background-position:center;background-blend-mode:screen,normal}

@@ -1,12 +1,9 @@
 import {CATEGORIES,CHARACTERS,BY_ID,BREAK_HITS} from './catalog-data.mjs?v=0.2.8';
 import {createCollectionStore} from './catalog-model.mjs?v=0.3.1';
-// Temporary review build: disable this flag when the collection check is complete.
-const REVIEW_UNLOCK_ALL=true;
 const $=id=>document.getElementById(id);
 
 export function createCatalogUI({showScreen,playTone,playMining=()=>playTone(250,.08),playReward=shiny=>playTone(shiny?1000:750,.25),onContinue,storage,audioSettings=()=>({enabled:true,sfx:100})}){
  const store=createCollectionStore(storage);
- if(REVIEW_UNLOCK_ALL)store.unlockForReview();
  let category='friends',page=0,returnTo='title',detail=null,detailShiny=false,openingTimer;
  const dialog=$('card-dialog');
  const pageSize=()=>window.innerWidth>=760?6:4;

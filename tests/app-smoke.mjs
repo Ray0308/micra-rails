@@ -50,7 +50,11 @@ assert.equal(parseFloat(el('actor-steve').style.top),moved.y,'pause must freeze 
 const pauseMoves=el('moves').textContent;slidePanel(generatePuzzle(JSON.parse(saved.get(JOURNEY_KEY)).seed).solution[0]);assert.equal(el('moves').textContent,pauseMoves,'pause must lock rail editing');
 el('back-title').onclick();assert.equal(document.body.dataset.screen,'title');
 el('open-guide').onclick();assert.equal(document.body.dataset.screen,'guide');
+assert.ok(el('catalog-grid').innerHTML.includes('未発見'));
+assert.ok(el('catalog-summary').textContent.startsWith('1 / 88'));
+assert.equal((el('catalog-grid').innerHTML.match(/collection-card owned/g)||[]).length,1);
 assert.ok(el('catalog-grid').innerHTML.includes('スティーブ'));
+assert.equal(saved.has('micra-rails.collection.review-backup.v0.2.7'),false);
 el('catalog-back').onclick();assert.equal(document.body.dataset.screen,'title');
 enterWorld('end');
 function slidePanel(index){

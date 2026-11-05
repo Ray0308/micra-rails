@@ -104,9 +104,18 @@ function positionActors(){
 }
 
 function railArtwork(type,key){
- const lines=ports[type].map(d=>{const [x,y]=[[50,0],[100,50],[50,100],[0,50]][d];return `<path d="M50 50 L${x} ${y}"/>`}).join('');
- const ring=(name,outer,inner)=>`<mask id="${name}-${key}" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="black"/><g stroke="white" stroke-width="${outer}" fill="none">${lines}</g><g stroke="black" stroke-width="${inner}" fill="none">${lines}</g></mask>`;
- return `<svg viewBox="0 0 100 100" aria-hidden="true" shape-rendering="crispEdges"><defs>${ring('rail-shadow',33,15)}${ring('rail-metal',29,19)}${ring('rail-shine',27,23)}<pattern id="wood-${key}" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#96683c"/><path d="M0 2H8M2 6H7" stroke="#ba8952" stroke-width="1"/><path d="M0 4H5" stroke="#624329" stroke-width="1"/></pattern></defs><g stroke="#15130f" stroke-opacity=".28" stroke-width="47" fill="none">${lines}</g><g stroke="#35261b" stroke-width="44" stroke-dasharray="9 9" stroke-dashoffset="4" fill="none">${lines}</g><g stroke="url(#wood-${key})" stroke-width="40" stroke-dasharray="6 12" stroke-dashoffset="2.5" fill="none">${lines}</g><rect width="100" height="100" fill="#302e29" mask="url(#rail-shadow-${key})"/><rect width="100" height="100" fill="#929b9b" mask="url(#rail-metal-${key})"/><rect width="100" height="100" fill="#d8dfda" mask="url(#rail-shine-${key})"/></svg>`;
+ // One block = 16 pixels, matching the scale of classic block textures.
+ const dirs=ports[type],rects=[];
+ const rayDistance=(x,y,d)=>{const [ex,ey]=[[8,0],[16,8],[8,16],[0,8]][d];const ax=Math.min(8,ex),bx=Math.max(8,ex),ay=Math.min(8,ey),by=Math.max(8,ey);return Math.max(Math.max(ax-x,0,x-bx),Math.max(ay-y,0,y-by));};
+ for(let y=0;y<16;y++)for(let x=0;x<16;x++){
+  const px=x+.5,py=y+.5,dist=Math.min(...dirs.map(d=>rayDistance(px,py,d)));
+  let fill=null;
+  const sleeper=dirs.some(d=>{const along=[8-py,px-8,py-8,8-px][d],across=d%2?Math.abs(py-8):Math.abs(px-8);return along>=0&&across<6&&(Math.floor(along)%5<2);});
+  if(sleeper)fill=(x+y)%5===0?'#b58a52':(x*3+y)%4===0?'#695034':'#92703f';
+  if(dist>=2&&dist<4)fill=dist<3?((x+y)%7===0?'#aaa99b':'#d0cfc0'):((x+y)%5===0?'#77796e':'#8f9387');
+  if(fill)rects.push(`<rect x="${x}" y="${y}" width="1" height="1" fill="${fill}"/>`);
+ }
+ return `<svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges">${rects.join('')}</svg>`;
 }
 function render(){
  if(!state)return;

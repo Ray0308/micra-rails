@@ -4,6 +4,7 @@ import {create,slide,start,ports,neighbor} from './engine.mjs?v=0.1.4';
 import {createMotion,updateMotion,sampleRoute} from './motion.mjs?v=0.1.4';
 
 const $=id=>document.getElementById(id);
+const UI_ICONS={"back":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M14 5L7 12L14 19M8 12H20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg>","play":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M8 5L19 12L8 19Z\" fill=\"currentColor\"/></svg>","pause":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M6 5H10V19H6ZM14 5H18V19H14Z\" fill=\"currentColor\"/></svg>","reset":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M19 10A7 7 0 1 0 19 15M19 4V10H13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"miter\"/></svg>","soundOn":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 9H7L12 5V19L7 15H3Z\" fill=\"currentColor\"/><path d=\"M16 8C19 10 19 14 16 16M19 5C24 9 24 15 19 19\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg>","soundOff":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 9H7L12 5V19L7 15H3Z\" fill=\"currentColor\"/><path d=\"M16 9L22 15M22 9L16 15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg>"};
 let state,motion,paused=false,last=null,pointer,runId,collectionUI;
 let audioStorage;
 try{audioStorage=window.localStorage}catch{}
@@ -29,7 +30,7 @@ function renderAudioOptions(){
     $(id+'-volume').setAttribute('aria-valuetext',settings[channel]+' / 100');
     $(id+'-volume').style.setProperty('--volume',settings[channel]+'%');
   }
-  $('sound').innerHTML=settings.enabled?'♪':'♪<span class="sound-off">×</span>';
+  $('sound').innerHTML=settings.enabled?UI_ICONS.soundOn:UI_ICONS.soundOff;
   $('sound').setAttribute('aria-label',settings.enabled?'サウンドをオフにする':'サウンドをオンにする');
   $('sound').setAttribute('aria-pressed',String(settings.enabled));
 }
@@ -106,7 +107,7 @@ function render(){
   $('moves').textContent=`${state.moves} 手`;
   $('start').disabled=state.status!=='ready';
   $('pause').disabled=state.status!=='running';
-  $('pause').textContent=paused?'▶':'Ⅱ';
+  $('pause').innerHTML=paused?UI_ICONS.play:UI_ICONS.pause;
   $('pause').setAttribute('aria-label',paused?'つづける':'一時停止');
   $('pause').setAttribute('aria-pressed',String(paused));
   $('level').disabled=state.status==='running';

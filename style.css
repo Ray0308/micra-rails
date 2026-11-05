@@ -90,7 +90,7 @@ button.tile.locked,.play-console button.tile.locked:hover{background:linear-grad
 .actor-steve.moving .actor-visual{animation:cart-rattle .18s linear infinite}
 .actor-creeper.moving .actor-visual{animation:creeper-walk .36s ease-in-out infinite}
 .actor-steve.moving .actor-visual::after{content:'';position:absolute;left:20%;bottom:8%;width:3px;height:3px;background:#dfc28c;box-shadow:5px 2px #b99760;animation:rail-dust .45s ease-out infinite;opacity:.7}
-.actor-creeper.fusing .actor-image{animation:creeper-fuse .18s steps(2,end) infinite}
+.actor-creeper.fusing .actor-image{animation:creeper-fuse var(--fuse-flash,.42s) steps(2,end) infinite}
 .actors-paused *{animation-play-state:paused!important}
 .character{display:block;width:48%;height:65%;background:#289aa3}
 .creeper{background:#70b53d}.cart{position:absolute;bottom:14%;left:16%;width:68%;height:26%;background:#949c9b;border:3px solid #444a48}

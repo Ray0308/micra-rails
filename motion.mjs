@@ -1,5 +1,8 @@
 import {nextStep,advance} from './engine.mjs?v=0.2.5';
 
+export const CREEPER_FUSE_MS=3000;
+export const CREEPER_STEP_MS=1700;
+
 export function createMotion(state){
   return {elapsed:0,route:[state.a],aDistance:0,bDistance:null,segment:null,fuse:0,movingA:false,movingB:false};
 }
@@ -13,7 +16,7 @@ export function sampleRoute(route,distance){
 }
 
 // Distances are measured along the trail in cells, independently of frame rate.
-export function updateMotion(state,m,delta,{aInterval=2600,bInterval=2200,delay=5500,fuseMs=950}={}){
+export function updateMotion(state,m,delta,{aInterval=2600,bInterval=2200,delay=5500,fuseMs=CREEPER_FUSE_MS}={}){
   if(state.status!=='running')return false;
   let changed=false;
   // Small steps keep entry locking and the explosion fuse consistent on slow frames.
@@ -50,14 +53,16 @@ export function updateMotion(state,m,delta,{aInterval=2600,bInterval=2200,delay=
     if(m.elapsed>=delay){
       if(m.bDistance===null){m.bDistance=0;changed=true;}
       const previous=m.bDistance;
-      m.bDistance=Math.min(m.aDistance,m.bDistance+activeTime/bInterval);
-      m.movingB=m.bDistance>previous;
+      const ignited=m.fuse>0;
+      if(!ignited)m.bDistance=Math.min(m.aDistance,m.bDistance+activeTime/bInterval);
+      m.movingB=!ignited&&m.bDistance>previous;
       state.bStep=Math.floor(m.bDistance);
       state.b=m.route[Math.min(state.bStep,m.route.length-1)];
       const a=sampleRoute(m.route,m.aDistance),b=sampleRoute(m.route,m.bDistance);
-      const close=Math.hypot(a.x-b.x,a.y-b.y)<.2;
+      const close=Math.hypot(a.x-b.x,a.y-b.y)<(ignited ? .75 : .2);
       const oldFuse=m.fuse;
       m.fuse=close?m.fuse+dt:0;
+      if(m.fuse>0)m.movingB=false;
       if(Boolean(oldFuse)!==Boolean(m.fuse))changed=true;
       if(m.fuse>=fuseMs){state.status='lost';m.movingA=m.movingB=false;changed=true;}
     }

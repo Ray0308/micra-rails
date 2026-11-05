@@ -1,12 +1,12 @@
 import {createJourneyStore,stageName} from './journey.mjs?v=0.2.5';
-import {createAudioController} from './audio.mjs?v=0.2.3';
+import {createAudioController} from './audio.mjs?v=0.2.6';
 import {createCatalogUI} from './catalog-ui.mjs?v=0.2.5';
 import {create,slide,start,ports,neighbor} from './engine.mjs?v=0.2.5';
-import {createMotion,updateMotion,sampleRoute} from './motion.mjs?v=0.2.5';
+import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS,CREEPER_STEP_MS} from './motion.mjs?v=0.2.6';
 
 const $=id=>document.getElementById(id);
 const UI_ICONS={"back":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M14 5L7 12L14 19M8 12H20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"square\" stroke-linejoin=\"miter\"/></svg>","play":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M8 5L19 12L8 19Z\" fill=\"currentColor\"/></svg>","pause":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M6 5H10V19H6ZM14 5H18V19H14Z\" fill=\"currentColor\"/></svg>","reset":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M19 10A7 7 0 1 0 19 15M19 4V10H13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linejoin=\"miter\"/></svg>","soundOn":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 9H7L12 5V19L7 15H3Z\" fill=\"currentColor\"/><path d=\"M16 8C19 10 19 14 16 16M19 5C24 9 24 15 19 19\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg>","soundOff":"<svg class=\"ui-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\" focusable=\"false\"><path d=\"M3 9H7L12 5V19L7 15H3Z\" fill=\"currentColor\"/><path d=\"M16 9L22 15M22 9L16 15\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"/></svg>"};
-let state,motion,paused=false,last=null,pointer,runId,collectionUI;
+let state,motion,paused=false,last=null,pointer,runId,collectionUI,stopHiss;
 let audioStorage;
 try{audioStorage=window.localStorage}catch{}
 const audio=createAudioController({storage:audioStorage});
@@ -22,6 +22,8 @@ for(const key of ['steve','creeper','house']){
 }
 
 function tone(hz=300,duration=.08){audio.tone(hz,duration)}
+function stopFuseSound(){stopHiss?.();stopHiss=null}
+function beginFuseSound(){stopFuseSound();stopHiss=audio.hiss(Math.max(.1,(CREEPER_FUSE_MS-motion.fuse)/1000))}
 function renderAudioOptions(){
   const settings=audio.settings;
   $('sound-on').setAttribute('aria-pressed',String(settings.enabled));
@@ -36,7 +38,7 @@ function renderAudioOptions(){
   $('sound').setAttribute('aria-label',settings.enabled?'サウンドをオフにする':'サウンドをオンにする');
   $('sound').setAttribute('aria-pressed',String(settings.enabled));
 }
-function setSound(enabled){if(!enabled)window.speechSynthesis?.cancel();audio.setEnabled(enabled);audio.unlock();renderAudioOptions();if(enabled)tone(440,.08)}
+function setSound(enabled){if(!enabled){window.speechSynthesis?.cancel();stopFuseSound()}audio.setEnabled(enabled);audio.unlock();renderAudioOptions();if(enabled){tone(440,.08);if(state?.status==='running'&&!paused&&motion.fuse>0)beginFuseSound()}}
 $('sound-on').onclick=()=>setSound(true);
 $('sound-off').onclick=()=>setSound(false);
 for(const channel of ['bgm','sfx']){
@@ -58,6 +60,7 @@ function renderActorImage(key){
 }
 
 function reset(){
+  stopFuseSound();
   runId=globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
   const current=journey.state;
   state=create(current.level,{seed:current.seed});motion=createMotion(state);
@@ -91,6 +94,7 @@ function positionActors(){
   placeActor('steve',motion.aDistance,motion.movingA);
   placeActor('creeper',motion.bDistance,motion.movingB);
   actors.creeper.classList.toggle('fusing',motion.fuse>0);
+  actors.creeper.style.setProperty('--fuse-flash',(0.42-0.28*Math.min(1,motion.fuse/CREEPER_FUSE_MS))+'s');
   $('actors').classList.toggle('actors-paused',paused);
 }
 
@@ -145,14 +149,16 @@ $('board').addEventListener('click',e=>{
 
 $('start').onclick=()=>{start(state);last=null;tone(650,.15);render()};
 $('reset').onclick=reset;$('again').onclick=reset;
-$('pause').onclick=()=>{paused=!paused;last=null;render()};
+$('pause').onclick=()=>{paused=!paused;last=null;if(paused)stopFuseSound();else if(motion.fuse>0)beginFuseSound();render()};
 $('sound').onclick=()=>setSound(!audio.settings.enabled);
 document.addEventListener('visibilitychange',()=>{
   audio.setVisible(!document.hidden);
+  if(document.hidden)stopFuseSound();
   if(document.hidden&&state.status==='running'){paused=true;last=null;render()}
 });
 
 function finish(win){
+  stopFuseSound();
   if(win){tone(850,.25);render();collectionUI.beginReward(runId,state.level);journey.complete(state.level);return;}
   $('overlay').hidden=false;$('result-icon').textContent=win?'🏡':'💥';
   $('result-title').textContent=win?'にげきった！':'ドカーン！';
@@ -164,7 +170,10 @@ function finish(win){
 function tick(now){
   const delta=last===null?0:Math.min(now-last,100);last=now;
   if(state.status==='running'&&!paused){
-    const changed=updateMotion(state,motion,delta,{aInterval:1900,bInterval:1500});
+    const previousFuse=motion.fuse;
+    const changed=updateMotion(state,motion,delta,{aInterval:1900,bInterval:CREEPER_STEP_MS,fuseMs:CREEPER_FUSE_MS});
+    if(motion.fuse>0&&previousFuse===0)beginFuseSound();
+    else if(motion.fuse===0&&previousFuse>0)stopFuseSound();
     if(changed)render();
     positionActors();
     if(state.status==='won'||state.status==='lost')finish(state.status==='won');
@@ -174,7 +183,7 @@ function tick(now){
 
 const screenIds={title:'title-screen',game:'game-screen',guide:'guide-screen',options:'options-screen',reward:'reward-screen'};
 function showScreen(name){
-  if(name!=='game'&&state.status==='running'){paused=true;last=null;render()}
+  if(name!=='game'&&state.status==='running'){paused=true;last=null;stopFuseSound();render()}
   document.body.dataset.screen=name;
   for(const [key,id] of Object.entries(screenIds))$(id).hidden=key!==name;
   window.scrollTo(0,0);

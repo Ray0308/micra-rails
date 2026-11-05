@@ -7,7 +7,8 @@ export function cleanAudioSettings(value){
 // Separate master, music, and effect buses. Context creation always follows a user gesture.
 export function createAudioController({storage,Context=globalThis.AudioContext||globalThis.webkitAudioContext,schedule=setInterval,cancel=clearInterval}={}){
  let settings=cleanAudioSettings(),context,master,music,effects,timer=null,visible=true,unlocked=false,nextTime=0,step=0;
- const musicVoices=new Set();
+ const musicVoices=new Set(),hisses=new Set();
+ function stopHisses(){for(const stop of [...hisses])stop()}
  try{const raw=storage?.getItem(AUDIO_KEY);if(raw)settings=cleanAudioSettings(JSON.parse(raw))}catch{}
  function save(){try{storage?.setItem(AUDIO_KEY,JSON.stringify(settings))}catch{}}
  function gain(param,value){if(!context)return;param.cancelScheduledValues(context.currentTime);param.setTargetAtTime(value,context.currentTime,.015)}
@@ -40,6 +41,7 @@ export function createAudioController({storage,Context=globalThis.AudioContext||
  }
  function sync(){
   if(!context)return;
+  if(!settings.enabled||settings.sfx===0||!visible)stopHisses();
   gain(master.gain,settings.enabled&&visible?1:0);gain(music.gain,settings.bgm/100);gain(effects.gain,settings.sfx/100);
   if(settings.enabled&&visible&&settings.bgm>0&&unlocked){
    if(timer===null){nextTime=context.currentTime+.04;step=0;fillMusic();timer=schedule(fillMusic,100);timer?.unref?.()}
@@ -69,6 +71,21 @@ export function createAudioController({storage,Context=globalThis.AudioContext||
    osc.connect(envelope).connect(effects);
    osc.onended=()=>{osc.disconnect();envelope.disconnect()};osc.start(time);osc.stop(time+duration);
   },
-  dispose(){stopMusic();context?.close()?.catch?.(()=>{})},
+  hiss(duration=3){
+   if(!settings.enabled||settings.sfx===0||!visible||!unlock())return ()=>{};
+   const time=context.currentTime,length=Math.max(.1,duration),buffer=context.createBuffer(1,Math.floor(context.sampleRate*.25),context.sampleRate);
+   const samples=buffer.getChannelData(0);
+   for(let i=0;i<samples.length;i++)samples[i]=Math.random()*2-1;
+   const source=context.createBufferSource(),filter=context.createBiquadFilter(),envelope=context.createGain();
+   source.buffer=buffer;source.loop=true;filter.type='highpass';filter.frequency.value=1100;
+   envelope.gain.setValueAtTime(.0001,time);envelope.gain.exponentialRampToValueAtTime(.065,time+.04);
+   envelope.gain.setValueAtTime(.065,time+Math.max(.04,length-.04));envelope.gain.exponentialRampToValueAtTime(.0001,time+length);
+   source.connect(filter).connect(envelope).connect(effects);
+   let ended=false;
+   const stop=()=>{if(ended)return;ended=true;hisses.delete(stop);try{source.stop()}catch{}};
+   source.onended=()=>{ended=true;hisses.delete(stop);source.disconnect();filter.disconnect();envelope.disconnect()};
+   hisses.add(stop);source.start(time);source.stop(time+length);return stop;
+  },
+  dispose(){stopHisses();stopMusic();context?.close()?.catch?.(()=>{})},
  };
 }

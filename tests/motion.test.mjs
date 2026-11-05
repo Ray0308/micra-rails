@@ -2,7 +2,7 @@ import {fixedBoard as create} from './fixtures.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {slide,start} from '../engine.mjs';
-import {createMotion,updateMotion,sampleRoute} from '../motion.mjs';
+import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS,CREEPER_STEP_MS} from '../motion.mjs';
 
 const safe={delay:1e9};
 function run(s,m,time,options=safe){for(let left=time;left>0;left-=Math.min(20,left))updateMotion(s,m,Math.min(20,left),options)}
@@ -26,7 +26,7 @@ test('stopping at a missing rail does not bank motion for a later jump',()=>{
 test('continuous pursuit starts after the delay and catches a stopped cart',()=>{
  const [s,m]=ready();run(s,m,5400,{});assert.equal(m.bDistance,null);
  run(s,m,400,{});assert.ok(m.bDistance>0&&m.bDistance<1);
- run(s,m,4000,{});assert.equal(s.status,'lost');assert.ok(m.fuse>=950);
+ run(s,m,6000,{});assert.equal(s.status,'lost');assert.ok(m.fuse>=CREEPER_FUSE_MS);
 });
 
 test('goal is awarded after the cart visually reaches the station center',()=>{
@@ -49,4 +49,27 @@ test('all three stages can still be escaped with continuous pursuit',()=>{
   start(s);const m=createMotion(s);run(s,m,20000,{});
   assert.equal(s.status,'won');assert.equal(m.aDistance,6);
  }
+});
+
+function caughtAtBlockedRail(){
+ const s=create();start(s);s.a=1;s.entry=3;s.tiles[1].used=['h'];
+ const m=createMotion(s);m.route=[0,1];m.aDistance=1;m.bDistance=1;m.elapsed=10000;
+ return [s,m];
+}
+
+test('contact gives exactly three seconds before exploding',()=>{
+ const [s,m]=caughtAtBlockedRail();
+ updateMotion(s,m,2990,{delay:0});assert.equal(s.status,'running');assert.equal(m.fuse,2990);assert.equal(m.movingB,false);
+ updateMotion(s,m,10,{delay:0});assert.equal(s.status,'lost');assert.equal(m.fuse,3000);
+});
+
+test('an ignited Creeper stands still and cancels ignition after the cart escapes',()=>{
+ const [s,m]=caughtAtBlockedRail();m.fuse=1000;assert.ok(slide(s,6));
+ run(s,m,500,{delay:0,aInterval:1900,bInterval:CREEPER_STEP_MS});assert.equal(m.bDistance,1);assert.equal(m.movingB,false);assert.ok(m.fuse>1000);
+ run(s,m,1100,{delay:0,aInterval:1900,bInterval:CREEPER_STEP_MS});assert.equal(s.status,'running');assert.equal(m.fuse,0);assert.ok(m.bDistance>1,'pursuit must restart after cancellation');
+});
+
+test('the adjusted walking speed takes 1.7 seconds per cell',()=>{
+ const [s,m]=caughtAtBlockedRail();m.bDistance=0;
+ run(s,m,850,{delay:0,bInterval:CREEPER_STEP_MS});assert.ok(Math.abs(m.bDistance-.5)<.001);assert.equal(m.fuse,0);
 });

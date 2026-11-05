@@ -7,9 +7,12 @@ function fixture(storage=memory()){
  class Param{constructor(){this.value=1}cancelScheduledValues(){}setValueAtTime(v){this.value=v}setTargetAtTime(v){this.value=v}exponentialRampToValueAtTime(v){this.value=v}}
  class Node{constructor(){this.gain=new Param()}connect(to){this.connectedTo=to;return to}disconnect(){}}
  class Context{
-  constructor(){this.currentTime=0;this.destination={};this.gains=[];this.oscs=[];this.resumes=0;this.suspends=0;instances.push(this)}
+  constructor(){this.currentTime=0;this.destination={};this.gains=[];this.oscs=[];this.noises=[];this.sampleRate=8000;this.resumes=0;this.suspends=0;instances.push(this)}
   createGain(){const n=new Node();this.gains.push(n);return n}
   createOscillator(){const n=new Node();n.frequency={value:0};n.start=()=>n.started=true;n.stop=time=>{if(time===undefined){n.stoppedNow=true;n.onended?.()}};this.oscs.push(n);return n}
+  createBuffer(channels,length,rate){const samples=new Float32Array(length);return {getChannelData:()=>samples,length,sampleRate:rate}}
+  createBufferSource(){const n=new Node();n.start=()=>n.started=true;n.stop=time=>{if(time===undefined){n.stoppedNow=true;n.onended?.()}else n.scheduledStop=time};this.noises.push(n);return n}
+  createBiquadFilter(){const n=new Node();n.frequency={value:0};return n}
   resume(){this.resumes++;return Promise.resolve()}suspend(){this.suspends++;return Promise.resolve()}close(){this.closed=true;return Promise.resolve()}
  }
  const audio=createAudioController({storage,Context,schedule:fn=>{const id=++timerId;jobs.set(id,fn);return id},cancel:id=>jobs.delete(id)});
@@ -59,4 +62,14 @@ test('hidden pages suspend audio and do not emit effects',()=>{
 test('unavailable storage and unsupported audio do not break menu settings',()=>{
  const storage={getItem(){throw Error('denied')},setItem(){throw Error('denied')}};
  const audio=createAudioController({storage,Context:null});audio.setVolume('bgm',0);audio.setEnabled(true);assert.equal(audio.unlock(),false);audio.tone();assert.deepEqual(audio.settings,{enabled:true,bgm:0,sfx:50});
+});
+
+test('Creeper hiss is a stoppable three-second effect and obeys effect/master mute',()=>{
+ const f=fixture();f.audio.setVolume('bgm',0);f.audio.setEnabled(true);
+ const stop=f.audio.hiss(3),ctx=f.instances[0],noise=ctx.noises[0];
+ assert.ok(noise.started);assert.equal(noise.loop,true);assert.equal(noise.scheduledStop,3);assert.equal(noise.connectedTo.type,'highpass');assert.equal(ctx.gains.at(-1).connectedTo,ctx.gains[2]);
+ stop();assert.ok(noise.stoppedNow);
+ f.audio.hiss();f.audio.setVolume('sfx',0);assert.ok(ctx.noises[1].stoppedNow);
+ f.audio.hiss();assert.equal(ctx.noises.length,2);
+ f.audio.setVolume('sfx',50);f.audio.hiss();f.audio.setEnabled(false);assert.ok(ctx.noises[2].stoppedNow);f.audio.dispose();
 });

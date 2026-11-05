@@ -322,5 +322,5 @@ body.booting> :not(.boot-screen):not(.version-badge){visibility:hidden}
 .boot-brand{width:min(640px,88vw);opacity:0;transition:opacity 1.2s ease-in-out}
 .boot-brand img{display:block;width:100%;max-height:76svh;object-fit:contain;user-select:none;-webkit-user-drag:none}
 .boot-screen.logo-ready .boot-brand{opacity:1}
-.boot-screen.is-leaving .boot-brand{opacity:0;transition-duration:1.2s}
+.boot-screen.is-leaving .boot-brand{opacity:0;transition-duration:2.1s}
 @media(prefers-reduced-motion:reduce){.boot-brand{transition:none}}

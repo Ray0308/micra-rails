@@ -1,4 +1,4 @@
-import {runStartup} from './startup.mjs?v=0.5.1';
+import {runStartup} from './startup.mjs?v=0.5.2';
 import {railArtwork} from './rail-art.mjs?v=0.4.4';
 import {renderTiles} from './tile-view.mjs?v=0.4.3';
 import {WORLDS,isWorld,loadWorld,saveWorld} from './worlds.mjs?v=0.3.1';

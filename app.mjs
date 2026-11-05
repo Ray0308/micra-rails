@@ -88,7 +88,7 @@ function render(){
   $('pause').textContent=paused?'▶':'Ⅱ';
   $('pause').setAttribute('aria-label',paused?'つづける':'一時停止');
   $('pause').setAttribute('aria-pressed',String(paused));
-  $('level').disabled=state.status==='running';$('pace').disabled=state.status==='running';
+  $('level').disabled=state.status==='running';
   $('message').textContent=paused?'おやすみ中。つづけるボタンで再開。':state.status==='ready'?'レールを準備したらスタート！ 光るパネルを動かせるよ。':state.status==='won'?'脱出成功！':state.status==='lost'?'つかまった！ レールを変えて、もう一度。':motion.fuse?'シュー……！ はやく、はなれて！':motion.elapsed<5500?'トロッコが出発！ もうすぐクリーパーが来る。':'歩いて追いかけてきた！ 右下の駅までレールをつなごう。';
   positionActors();
 }
@@ -135,8 +135,7 @@ function finish(win){
 function tick(now){
   const delta=last===null?0:Math.min(now-last,100);last=now;
   if(state.status==='running'&&!paused){
-    const easy=$('pace').value==='easy';
-    const changed=updateMotion(state,motion,delta,{aInterval:easy?2600:1900,bInterval:easy?2200:1500});
+    const changed=updateMotion(state,motion,delta,{aInterval:1900,bInterval:1500});
     if(changed)render();
     positionActors();
     if(state.status==='won'||state.status==='lost')finish(state.status==='won');

@@ -26,6 +26,8 @@ assert.ok(el('actor-steve').innerHTML.includes('assets/steve.png'));
 assert.ok(el('actor-creeper').innerHTML.includes('assets/creeper.png'));
 assert.ok(!el('actor-creeper').innerHTML.includes('class="cart"'));
 assert.ok(!elements.has('exit-game')&&!elements.has('exit-screen'),'exit must be replaced by options');
+el('open-credits').onclick();assert.equal(document.body.dataset.screen,'credits');assert.equal(el('credits-screen').hidden,false);
+el('credits-back').onclick();assert.equal(document.body.dataset.screen,'title');assert.equal(el('credits-screen').hidden,true);
 el('open-options').onclick();assert.equal(document.body.dataset.screen,'options');
 el('bgm-volume').value='27';el('bgm-volume').events.input();
 el('sfx-volume').value='0';el('sfx-volume').events.input();

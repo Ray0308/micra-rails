@@ -60,7 +60,7 @@ document.addEventListener('touchend',()=>audio.unlock(),{capture:true,passive:tr
 document.addEventListener('click',e=>{
  audio.unlock();
  const id=e.target?.closest?.('button')?.id;
- if(['play-game','open-guide','open-options','world-back','options-done','back-title','catalog-back','detail-close','reward-next','reward-title'].includes(id))audio.effect('click');
+ if(['play-game','open-guide','open-options','open-credits','credits-back','world-back','options-done','back-title','catalog-back','detail-close','reward-next','reward-title'].includes(id))audio.effect('click');
 },{capture:true});
 window.addEventListener('pageshow',()=>{if(!document.hidden)void audio.setVisible(true)});
 window.addEventListener('focus',()=>{if(!document.hidden)void audio.setVisible(true)});
@@ -225,7 +225,7 @@ function tick(now){
   requestAnimationFrame(tick);
 }
 
-const screenIds={title:'title-screen',game:'game-screen',guide:'guide-screen',options:'options-screen',reward:'reward-screen',world:'world-screen'};
+const screenIds={title:'title-screen',game:'game-screen',guide:'guide-screen',options:'options-screen',credits:'credits-screen',reward:'reward-screen',world:'world-screen'};
 function showScreen(name){
   if(name!=='game'&&state.status==='running'){paused=true;last=null;stopFuseSound();render()}
   document.body.dataset.screen=name;
@@ -252,6 +252,8 @@ $('world-back').onclick=()=>showScreen('title');
 $('open-guide').onclick=()=>collectionUI.openCollection('title');
 $('open-options').onclick=()=>{audio.unlock();renderAudioOptions();showScreen('options')};
 $('options-done').onclick=()=>showScreen('title');
+$('open-credits').onclick=()=>showScreen('credits');
+$('credits-back').onclick=()=>showScreen('title');
 $('back-title').onclick=()=>showScreen('title');
 $('death-title').onclick=()=>{tone(300,.12);$('overlay').hidden=true;showScreen('title')};
 document.querySelectorAll('[data-back-title]').forEach(button=>button.onclick=()=>showScreen('title'));

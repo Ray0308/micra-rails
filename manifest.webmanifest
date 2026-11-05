@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "マイクラレールズ REN EDITION",
+  "short_name": "マイクラレールズ",
+  "description": "トロッコで逃げるレールパズル",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#24211e",
+  "theme_color": "#24211e",
+  "icons": [
+    {
+      "src": "assets/app-icon.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

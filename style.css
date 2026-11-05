@@ -287,12 +287,8 @@ body[data-world="grass"][data-screen="game"]::before,body[data-world="grass"][da
 body[data-world="nether"][data-screen="game"]::before,body[data-world="nether"][data-screen="reward"]::before{background-image:url('assets/world-nether.png')}
 body[data-world="end"][data-screen="game"]::before,body[data-world="end"][data-screen="reward"]::before{background-image:url('assets/world-end.png')}
 body[data-world="grass"] .play-console{border-top-color:#839568;border-left-color:#839568}
-body[data-world="grass"] .play-console button.tile:not(.locked):not(.placement-slot),body[data-world="grass"] .play-console button.tile:not(.locked):not(.placement-slot):hover{background:linear-gradient(#6c814c88,#6c814c88),#775d3e url('assets/ground-texture.png') center / cover}
-body[data-world="mine"] .play-console button.tile:not(.locked),body[data-world="mine"] .play-console button.tile:not(.locked):hover{background:linear-gradient(#716c5c66,#716c5c66),#64625c url('assets/ui-stone.svg') center / 64px}
 body[data-world="nether"] .play-console{border-top-color:#9d6f58;border-left-color:#9d6f58}
-body[data-world="nether"] .play-console button.tile:not(.locked):not(.placement-slot),body[data-world="nether"] .play-console button.tile:not(.locked):not(.placement-slot):hover{background:linear-gradient(#7a302dcc,#7a302dcc),#5b342c url('assets/ground-texture.png') center / cover}
 body[data-world="end"] .play-console{border-top-color:#a49bb5;border-left-color:#a49bb5}
-body[data-world="end"] .play-console button.tile:not(.locked),body[data-world="end"] .play-console button.tile:not(.locked):hover{background:linear-gradient(#c5bd8bdd,#c5bd8bdd),#827d58 url('assets/ground-texture.png') center / cover}
 body[data-world="end"] .play-console .tile.empty{background:repeating-linear-gradient(135deg,#16121d 0 12px,#20182c 12px 24px)}
 @media(max-width:420px){.world-panel{padding:20px 14px}.world-panel h1{font-size:21px}.world-choices{gap:9px}.world-choice{min-height:170px;padding-left:5px;padding-right:5px}.world-choice small{font-size:8px}}
 @media(orientation:landscape) and (max-height:540px){.world-screen{padding:32px 18px 18px}.world-panel{width:min(850px,100%);padding:16px}.world-choices{grid-template-columns:repeat(4,1fr)}.world-panel h1{margin-bottom:14px;font-size:20px}.world-choice{min-height:165px}.world-panel #world-back{margin-top:14px;min-height:40px}.play-console .world-queue{flex-direction:column;gap:6px;align-items:center}.play-console .queue-piece{width:34px;height:34px}.play-console .queue-piece.next-piece{width:39px;height:39px}}

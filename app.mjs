@@ -1,8 +1,9 @@
+import {createCatalogUI} from './catalog-ui.mjs?v=0.1.6';
 import {create,slide,start,ports,neighbor} from './engine.mjs?v=0.1.4';
 import {createMotion,updateMotion,sampleRoute} from './motion.mjs?v=0.1.4';
 
 const $=id=>document.getElementById(id);
-let state,motion,paused=false,last=null,sounding=false,audio,pointer;
+let state,motion,paused=false,last=null,sounding=false,audio,pointer,runId,collectionUI;
 let metrics={width:0,height:0,gap:5};
 const assets={};
 const actors={steve:$('actor-steve'),creeper:$('actor-creeper')};
@@ -35,6 +36,7 @@ function renderActorImage(key){
 }
 
 function reset(){
+  runId=globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
   state=create(Number($('level').value));motion=createMotion(state);
   paused=false;last=null;pointer=null;
   $('overlay').hidden=true;$('board').classList.remove('boom');
@@ -125,6 +127,7 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 function finish(win){
+  if(win){tone(850,.25);render();collectionUI.beginReward(runId,state.level);return;}
   $('overlay').hidden=false;$('result-icon').textContent=win?'🏡':'💥';
   $('result-title').textContent=win?'にげきった！':'ドカーン！';
   $('result-text').textContent=win?`${state.moves}回のスライドで、駅に到着。`:'次はどこにつなごう？ もう一度チャレンジ。';
@@ -143,7 +146,7 @@ function tick(now){
   requestAnimationFrame(tick);
 }
 
-const screenIds={title:'title-screen',game:'game-screen',guide:'guide-screen',exit:'exit-screen'};
+const screenIds={title:'title-screen',game:'game-screen',guide:'guide-screen',exit:'exit-screen',reward:'reward-screen'};
 function showScreen(name){
   if(name!=='game'&&state.status==='running'){paused=true;last=null;render()}
   document.body.dataset.screen=name;
@@ -153,10 +156,15 @@ function showScreen(name){
   const target=name==='title'?$('play-game'):name==='game'?$('start'):$(screenIds[name]).querySelector('button');
   target?.focus({preventScroll:true});
 }
-$('play-game').onclick=()=>{reset();showScreen('game')};
-$('open-guide').onclick=()=>showScreen('guide');
+let collectionStorage;
+try{collectionStorage=window.localStorage}catch{}
+collectionUI=createCatalogUI({showScreen,playTone:tone,storage:collectionStorage,onContinue:level=>{
+  $('level').value=String((level+1)%3);reset();showScreen('game');
+}});
+$('play-game').onclick=()=>{if(collectionUI.resumeReward())return;reset();showScreen('game')};
+$('open-guide').onclick=()=>collectionUI.openCollection('title');
 $('exit-game').onclick=()=>showScreen('exit');
 $('back-title').onclick=()=>showScreen('title');
 document.querySelectorAll('[data-back-title]').forEach(button=>button.onclick=()=>showScreen('title'));
 renderActorImage('steve');renderActorImage('creeper');
-reset();requestAnimationFrame(tick);
+reset();collectionUI.resumeReward();requestAnimationFrame(tick);

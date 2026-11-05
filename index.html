@@ -1,7 +1,7 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#24211e"><title>マイクラレールズ — トロッコでにげろ！</title><link rel="stylesheet" href="style.css?v=0.1.5"></head>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#24211e"><title>マイクラレールズ — トロッコでにげろ！</title><link rel="stylesheet" href="style.css?v=0.1.6"></head>
 <body data-screen="title">
-<div class="version-badge" aria-label="バージョン 0.1.5">v0.1.5</div>
+<div class="version-badge" aria-label="バージョン 0.1.6">v0.1.6</div>
 <section id="title-screen" class="menu-screen" aria-label="タイトル画面">
   <div class="title-logo"><h1><img src="assets/title-logo-transparent.png" alt="マイクラレールズ" width="1024" height="411"></h1></div>
   <nav class="title-menu" aria-label="メインメニュー">
@@ -11,16 +11,35 @@
   </nav>
   <p class="title-footer">マイクラレールズ <span>トロッコでにげろ！</span></p>
 </section>
-<section id="guide-screen" class="menu-screen secondary-screen" aria-labelledby="guide-title" hidden>
-  <div class="menu-panel"><h1 id="guide-title">図鑑</h1><p class="panel-intro">キャラクターとレールのひみつ</p>
-    <div class="encyclopedia">
-      <article><span class="dex-art dex-steve" aria-hidden="true">▣</span><div><h2>スティーブのトロッコ</h2><p>つながったレールを自動で走る。レールが途切れると止まるよ。駅までにがしてあげよう！</p></div></article>
-      <article><span class="dex-art dex-creeper" aria-hidden="true">▥</span><div><h2>クリーパー</h2><p>スティーブの通った道を歩いて追いかける。追いつくと「シュー……ボン！」。爆発する前にはなれよう。</p></div></article>
-      <article><span class="dex-art" aria-hidden="true">═</span><div><h2>レールパネル</h2><p>空きマスのとなりのパネルをスライド。通ったパネルは固定され、同じ道にはもう入れない。</p></div></article>
-      <article><span class="dex-art" aria-hidden="true">╬</span><div><h2>十字レール</h2><p>曲がらず、まっすぐ進むレール。固定されても、まだ通っていない方向から一度だけ横切れる。</p></div></article>
-    </div><button class="mc-button" data-back-title>タイトルへ</button>
+<section id="guide-screen" class="collection-screen" aria-labelledby="catalog-heading" hidden>
+  <div class="catalog-shell">
+    <header class="catalog-header"><button id="catalog-back" class="hud-button" aria-label="戻る">◀</button><h1 id="catalog-heading">図鑑</h1><span id="catalog-summary" aria-live="polite"></span></header>
+    <div id="catalog-tabs" role="tablist" aria-label="キャラクターのなかま"></div>
+    <div id="catalog-grid" class="catalog-grid" role="tabpanel"></div>
+    <nav id="catalog-pages" class="catalog-pages" aria-label="図鑑のページ"><button id="catalog-prev" aria-label="前のページ">◀</button><span id="catalog-page" aria-live="polite"></span><button id="catalog-next" aria-label="次のページ">▶</button></nav>
   </div>
+  <dialog id="card-dialog" class="collection-dialog" aria-labelledby="detail-name"><button id="close-card" class="detail-close" aria-label="カードを閉じる">×</button><div id="detail-card" class="collectible-card"></div><div class="detail-copy"><h2 id="detail-name"></h2><p id="detail-count"></p><p id="detail-fact"></p><div class="card-variants"><button id="normal-card">ふつう</button><button id="shiny-card">✦ キラ</button></div><button id="read-card">♪ おはなしを聞く</button></div></dialog>
 </section>
+<section id="reward-screen" class="reward-screen" aria-labelledby="reward-headline" data-phase="mining" hidden>
+  <button id="reward-title-back" class="hud-button reward-back" aria-label="タイトルへ戻る">◀</button>
+  <h1 id="reward-headline">お宝を見つけた！</h1>
+  <div class="mining-stage">
+    <button id="mine-block" class="mine-block" aria-label="ブロックを掘る。あと5回">
+      <span id="block-cube" class="block-cube" aria-hidden="true">
+        <span class="mine-face face-front"><i class="ore-specks"></i><svg class="block-cracks" viewBox="0 0 100 100"></svg></span>
+        <span class="mine-face face-side"><i class="ore-specks"></i><svg class="block-cracks" viewBox="0 0 100 100"></svg></span>
+        <span class="mine-face face-top"><i class="ore-specks"></i><svg class="block-cracks" viewBox="0 0 100 100"></svg></span>
+      </span>
+    </button>
+    <div id="block-fragments" aria-hidden="true"></div>
+    <div id="reward-card" class="collectible-card" hidden></div>
+  </div>
+  <p id="mining-hint">タップで こわす</p>
+  <div id="mining-progress" class="mining-progress" role="img" aria-label="5回のうち0回掘りました"></div>
+  <p id="reward-status" class="reward-status" role="status" aria-live="polite"></p>
+  <div id="reward-actions" class="reward-actions" hidden><button id="reward-next" class="mc-button">次の坑道へ</button><button id="reward-book">図鑑</button></div>
+</section>
+<p id="collection-save-warning" class="save-warning" role="status" hidden></p>
 <section id="exit-screen" class="menu-screen secondary-screen" aria-labelledby="exit-title" hidden>
   <div class="menu-panel exit-panel"><h1 id="exit-title">またあそぼう！</h1><p>このタブを閉じると終了できます。</p><button class="mc-button" data-back-title>タイトルへ</button></div>
 </section>
@@ -44,4 +63,4 @@
   </div>
   <div class="game-options"><span id="moves" aria-label="スライド回数">0 手</span></div>
 </section>
-</main><script type="module" src="app.mjs?v=0.1.5"></script></body></html>
+</main><script type="module" src="app.mjs?v=0.1.6"></script></body></html>

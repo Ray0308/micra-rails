@@ -1,4 +1,4 @@
-import {nextStep,advance} from './engine.mjs?v=0.2.5';
+import {nextStep,advance} from './engine.mjs?v=0.3.1';
 
 export const CREEPER_FUSE_MS=3000;
 export const CREEPER_STEP_MS=1700;
@@ -16,8 +16,9 @@ export function sampleRoute(route,distance){
 }
 
 // Distances are measured along the trail in cells, independently of frame rate.
-export function updateMotion(state,m,delta,{aInterval=2600,bInterval=2200,delay=5500,fuseMs=CREEPER_FUSE_MS}={}){
+export function updateMotion(state,m,delta,{aInterval=2600,bInterval=2200,delay=5500,fuseMs=CREEPER_FUSE_MS,pausePursuitOnBrake=false}={}){
   if(state.status!=='running')return false;
+  if(pausePursuitOnBrake&&m.cartStopped){m.movingA=m.movingB=false;return false;}
   let changed=false;
   // Small steps keep entry locking and the explosion fuse consistent on slow frames.
   for(let remaining=delta;remaining>0&&state.status==='running';){

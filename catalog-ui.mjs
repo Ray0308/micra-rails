@@ -1,5 +1,5 @@
 import {CATEGORIES,CHARACTERS,BY_ID,BREAK_HITS} from './catalog-data.mjs?v=0.2.8';
-import {createCollectionStore} from './catalog-model.mjs?v=0.2.8';
+import {createCollectionStore} from './catalog-model.mjs?v=0.3.1';
 // Temporary review build: disable this flag when the collection check is complete.
 const REVIEW_UNLOCK_ALL=true;
 const $=id=>document.getElementById(id);
@@ -139,7 +139,7 @@ export function createCatalogUI({showScreen,playTone,onContinue,storage,audioSet
   }else $('block-fragments').replaceChildren();
  }
  function resumeReward(){if(!store.state.reward)return false;renderReward();showScreen('reward');return true}
- function beginReward(runId,level){store.beginReward(runId,level);return resumeReward()}
+ function beginReward(runId,level,worldId){store.beginReward(runId,level,worldId);return resumeReward()}
  $('mine-block').onclick=()=>{
   const before=store.state.reward;if(!before||before.phase!=='mining')return;
   const r=store.tapBlock();renderCracks(r.hits);saveWarning();
@@ -149,7 +149,7 @@ export function createCatalogUI({showScreen,playTone,onContinue,storage,audioSet
  };
  $('reward-next').onclick=()=>{
   const r=store.state.reward;if(!r||r.phase!=='revealed')return;
-  const level=r.level;store.acknowledge();onContinue(level);
+  const level=r.level,world=r.world;store.acknowledge();onContinue(level,world);
  };
  $('reward-book').onclick=()=>openCollection('reward');
  $('reward-title-back').onclick=()=>{
@@ -157,5 +157,5 @@ export function createCatalogUI({showScreen,playTone,onContinue,storage,audioSet
   if(store.state.reward?.phase==='revealed')store.acknowledge();
   showScreen('title');
  };
- return {beginReward,resumeReward,openCollection,hasReward:()=>Boolean(store.state.reward),pendingLevel:()=>store.state.reward?.level};
+ return {beginReward,resumeReward,openCollection,hasReward:()=>Boolean(store.state.reward),pendingLevel:()=>store.state.reward?.level,pendingWorld:()=>store.state.reward?.world};
 }

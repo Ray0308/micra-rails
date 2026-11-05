@@ -257,3 +257,42 @@ body[data-screen="reward"]::after{background:radial-gradient(ellipse at 50% 42%,
 /* A warm pressed state distinguishes the cart brake from global pause. */
 .play-console .actions .primary[aria-pressed="true"]:not(:disabled){background:#89734c;color:#fff1cc;box-shadow:inset 2px 2px #534428,inset -2px -2px #b9a176,0 1px #10110c}
 .play-console .actions .primary[aria-pressed="true"]:hover:not(:disabled){background:#998258}
+
+/* Four world choices, each with a different rail mechanic and reward pool. */
+.world-screen{background:#12120e77;padding-top:44px;padding-bottom:24px}
+.world-panel{width:min(580px,100%);padding:24px;background:#292922ee;border:3px solid #a49f87;box-shadow:inset 3px 3px #686755,inset -3px -3px #15160f,0 18px 40px #0008}
+.world-panel h1{text-align:center;margin:0 0 24px;font-size:23px;letter-spacing:3px;color:#ede7d2;text-shadow:2px 2px #15150e}
+.world-choices{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.world-choice{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;padding:24px 8px 14px;min-height:176px;background:#44473c;border:2px solid #181c11;box-shadow:inset 2px 2px #8b9078,inset -2px -2px #262c1c;text-shadow:1px 2px #141b0e;--world-accent:#c1d49e}
+.world-choice.choice-mine{--world-accent:#d2c9aa}.world-choice.choice-nether{--world-accent:#e8a578}.world-choice.choice-end{--world-accent:#d4b4f1}
+.world-choice:hover:not(:disabled){background:#545a47;box-shadow:inset 2px 2px #aab594,inset -2px -2px #323c26}
+.world-choice[aria-pressed="true"]{border-color:var(--world-accent);box-shadow:inset 0 0 0 1px #ddd4ac44,0 0 0 1px #171c10}
+.world-symbol{display:block;width:48px;height:52px;filter:drop-shadow(2px 3px #1118)}
+.world-choice strong{font-size:19px;color:var(--world-accent);letter-spacing:2px}
+.world-choice>span:not(.world-rate){font-size:11px;color:#e2e5d5;font-weight:500;line-height:1.5}
+.world-choice small{font-size:9px;color:#abb59b;font-weight:400;line-height:1.5}
+.world-rate{position:absolute;right:7px;top:6px;font:9px ui-monospace,monospace;color:#d9c78d;letter-spacing:.3px}
+#world-back{margin-top:20px;min-height:46px;background:#777;font-size:15px;letter-spacing:3px;box-shadow:inset 2px 2px #aaa,inset -2px -2px #444,0 2px #111}
+.stage-label{flex-direction:column;gap:3px;line-height:1.15}
+#world-rule{font-size:9px;font-weight:400;letter-spacing:1px;color:#adb59b}
+.world-queue{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px;color:#b9bfa9;font-size:10px;letter-spacing:1px}
+#queue-pieces{display:flex;gap:6px;align-items:center}
+.queue-piece{display:block;position:relative;width:40px;height:40px;background:#734d3d;border:1px solid #242012;opacity:.6}
+.queue-piece.next-piece{border:2px solid #d6c38b;opacity:1;width:46px;height:46px}
+.queue-piece svg{position:absolute;inset:0;width:100%;height:100%}
+.tile.selected-tile{outline:3px solid #f3dc8f;outline-offset:-3px;filter:brightness(1.15)}
+.play-console button.tile.placement-slot,.play-console button.tile.placement-slot:hover{background:repeating-linear-gradient(135deg,#221814 0 12px,#2a1e18 12px 24px);box-shadow:inset 2px 2px 5px #0008;border:1px solid #1a110e}
+.place-plus{position:absolute;inset:0;display:grid;place-items:center;color:#a77d5c77;font-size:26px;font-weight:400}
+body[data-world="grass"][data-screen="game"]::before,body[data-world="grass"][data-screen="reward"]::before{background-image:url('assets/world-grassland.png')}
+body[data-world="nether"][data-screen="game"]::before,body[data-world="nether"][data-screen="reward"]::before{background-image:url('assets/world-nether.png')}
+body[data-world="end"][data-screen="game"]::before,body[data-world="end"][data-screen="reward"]::before{background-image:url('assets/world-end.png')}
+body[data-world="grass"] .play-console{border-top-color:#839568;border-left-color:#839568}
+body[data-world="grass"] .play-console button.tile:not(.locked):not(.placement-slot),body[data-world="grass"] .play-console button.tile:not(.locked):not(.placement-slot):hover{background:linear-gradient(#6c814c88,#6c814c88),#775d3e url('assets/ground-texture.png') center / cover}
+body[data-world="mine"] .play-console button.tile:not(.locked),body[data-world="mine"] .play-console button.tile:not(.locked):hover{background:linear-gradient(#716c5c66,#716c5c66),#64625c url('assets/ui-stone.svg') center / 64px}
+body[data-world="nether"] .play-console{border-top-color:#9d6f58;border-left-color:#9d6f58}
+body[data-world="nether"] .play-console button.tile:not(.locked):not(.placement-slot),body[data-world="nether"] .play-console button.tile:not(.locked):not(.placement-slot):hover{background:linear-gradient(#7a302dcc,#7a302dcc),#5b342c url('assets/ground-texture.png') center / cover}
+body[data-world="end"] .play-console{border-top-color:#a49bb5;border-left-color:#a49bb5}
+body[data-world="end"] .play-console button.tile:not(.locked),body[data-world="end"] .play-console button.tile:not(.locked):hover{background:linear-gradient(#c5bd8bdd,#c5bd8bdd),#827d58 url('assets/ground-texture.png') center / cover}
+body[data-world="end"] .play-console .tile.empty{background:repeating-linear-gradient(135deg,#16121d 0 12px,#20182c 12px 24px)}
+@media(max-width:420px){.world-panel{padding:20px 14px}.world-panel h1{font-size:21px}.world-choices{gap:9px}.world-choice{min-height:170px;padding-left:5px;padding-right:5px}.world-choice small{font-size:8px}}
+@media(orientation:landscape) and (max-height:540px){.world-screen{padding:32px 18px 18px}.world-panel{width:min(850px,100%);padding:16px}.world-choices{grid-template-columns:repeat(4,1fr)}.world-panel h1{margin-bottom:14px;font-size:20px}.world-choice{min-height:165px}.world-panel #world-back{margin-top:14px;min-height:40px}.play-console .world-queue{flex-direction:column;gap:6px;align-items:center}.play-console .queue-piece{width:34px;height:34px}.play-console .queue-piece.next-piece{width:39px;height:39px}}

@@ -1,8 +1,9 @@
-import {createJourneyStore,stageName} from './journey.mjs?v=0.2.5';
+import {WORLDS,isWorld,loadWorld,saveWorld} from './worlds.mjs?v=0.3.1';
+import {createJourneyStore} from './journey.mjs?v=0.2.5';
 import {createAudioController} from './audio.mjs?v=0.2.6';
-import {createCatalogUI} from './catalog-ui.mjs?v=0.2.8';
-import {create,slide,start,ports,neighbor} from './engine.mjs?v=0.2.5';
-import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS,CREEPER_STEP_MS} from './motion.mjs?v=0.3.0';
+import {createCatalogUI} from './catalog-ui.mjs?v=0.3.1';
+import {create,slide,start,ports,neighbor,canEdit,swap,rotate,build,removePlaced} from './engine.mjs?v=0.3.1';
+import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS} from './motion.mjs?v=0.3.1';
 
 const $=id=>document.getElementById(id);
 const STOP_ICON='<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6H18V18H6Z" fill="currentColor"/></svg>';
@@ -12,6 +13,8 @@ let audioStorage;
 try{audioStorage=window.localStorage}catch{}
 const audio=createAudioController({storage:audioStorage});
 const journey=createJourneyStore(audioStorage);
+let selectedWorld=loadWorld(audioStorage),selectedTile=null;
+const brakeFreezesWorld=()=>Boolean(motion?.cartStopped&&WORLDS[selectedWorld].pausePursuitOnBrake);
 let metrics={width:0,height:0,gap:5};
 const assets={};
 const actors={steve:$('actor-steve'),creeper:$('actor-creeper')};
@@ -39,7 +42,7 @@ function renderAudioOptions(){
   $('sound').setAttribute('aria-label',settings.enabled?'サウンドをオフにする':'サウンドをオンにする');
   $('sound').setAttribute('aria-pressed',String(settings.enabled));
 }
-function setSound(enabled){if(!enabled){window.speechSynthesis?.cancel();stopFuseSound()}audio.setEnabled(enabled);audio.unlock();renderAudioOptions();if(enabled){tone(440,.08);if(state?.status==='running'&&!paused&&motion.fuse>0)beginFuseSound()}}
+function setSound(enabled){if(!enabled){window.speechSynthesis?.cancel();stopFuseSound()}audio.setEnabled(enabled);audio.unlock();renderAudioOptions();if(enabled){tone(440,.08);if(state?.status==='running'&&!paused&&!brakeFreezesWorld()&&motion.fuse>0)beginFuseSound()}}
 $('sound-on').onclick=()=>setSound(true);
 $('sound-off').onclick=()=>setSound(false);
 for(const channel of ['bgm','sfx']){
@@ -64,7 +67,8 @@ function reset(){
   stopFuseSound();
   runId=globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
   const current=journey.state;
-  state=create(current.level,{seed:current.seed});motion=createMotion(state);
+  state=create(current.level,{seed:current.seed,world:selectedWorld});motion=createMotion(state);selectedTile=null;
+  document.body.dataset.world=selectedWorld;
   paused=false;last=null;pointer=null;
   $('overlay').hidden=true;$('board').classList.remove('boom');
   render();measureBoard();positionActors();
@@ -96,43 +100,53 @@ function positionActors(){
   placeActor('creeper',motion.bDistance,motion.movingB);
   actors.creeper.classList.toggle('fusing',motion.fuse>0);
   actors.creeper.style.setProperty('--fuse-flash',(0.42-0.28*Math.min(1,motion.fuse/CREEPER_FUSE_MS))+'s');
-  $('actors').classList.toggle('actors-paused',paused);
+  $('actors').classList.toggle('actors-paused',paused||brakeFreezesWorld());
 }
 
+function railArtwork(type,key){
+ const lines=ports[type].map(d=>{const [x,y]=[[50,0],[100,50],[50,100],[0,50]][d];return `<path d="M50 50 L${x} ${y}"/>`}).join('');
+ return `<svg viewBox="0 0 100 100" aria-hidden="true"><defs><mask id="rail-mask-${key}" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="black"/><g stroke="white" stroke-width="29" fill="none">${lines}</g><g stroke="black" stroke-width="19" fill="none">${lines}</g></mask><linearGradient id="rail-metal-${key}" x2="1" y2="1"><stop stop-color="#eee3c5"/><stop offset=".42" stop-color="#979b99"/><stop offset=".58" stop-color="#dedbcb"/><stop offset="1" stop-color="#666b6b"/></linearGradient></defs><g stroke="#342316" stroke-width="46" stroke-dasharray="9 11" fill="none">${lines}</g><g stroke="#916b42" stroke-width="40" stroke-dasharray="7 13" fill="none">${lines}</g><rect width="100" height="100" fill="url(#rail-metal-${key})" mask="url(#rail-mask-${key})"/></svg>`;
+}
 function render(){
-  if(!state)return;
-  const gap=state.tiles.indexOf(null);
-  $('board').innerHTML=state.tiles.map((tile,i)=>{
-    if(!tile)return '<div class="tile empty" aria-label="空きマス"></div>';
-    const reserved=i===state.reserved;
-    const movable=state.status==='running'&&!paused&&!tile.used.length&&!reserved&&i!==0&&i!==15&&ports.cross.some(d=>neighbor(gap,d)===i);
-    const lines=ports[tile.type].map(d=>{
-      const [x,y]=[[50,0],[100,50],[50,100],[0,50]][d];
-      return `<path d="M50 50 L${x} ${y}"/>`;
-    }).join('');
-    return `<button data-index="${i}" aria-disabled="${!movable}" tabindex="${movable?0:-1}" class="tile ${tile.used.length?'locked':''} ${reserved?'reserved':''} ${movable?'movable':''}" aria-label="${Math.floor(i/4)+1}行${i%4+1}列 ${tile.type==='cross'?'十字':'レール'} ${tile.used.length?'固定':reserved?'進入中':movable?'移動できる':''}"><svg viewBox="0 0 100 100" aria-hidden="true"><defs><mask id="rail-mask-${i}" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100"><rect width="100" height="100" fill="black"/><g stroke="white" stroke-width="29" fill="none">${lines}</g><g stroke="black" stroke-width="19" fill="none">${lines}</g></mask><linearGradient id="rail-metal-${i}" x2="1" y2="1"><stop stop-color="#eee3c5"/><stop offset=".42" stop-color="#979b99"/><stop offset=".58" stop-color="#dedbcb"/><stop offset="1" stop-color="#666b6b"/></linearGradient></defs><g stroke="#342316" stroke-width="46" stroke-dasharray="9 11" fill="none">${lines}</g><g stroke="#916b42" stroke-width="40" stroke-dasharray="7 13" fill="none">${lines}</g><rect width="100" height="100" fill="url(#rail-metal-${i})" mask="url(#rail-mask-${i})"/></svg>${i===0?'<span class="badge">▶</span>':''}${i===15?(assets.house?`<img class="house-img" src="${assets.house}" alt="駅">`:'<span class="house">⌂</span>'):''}</button>`;
-  }).join('');
-  $('moves').textContent=`${state.moves} 手`;
-  const canDrive=state.status==='ready'||state.status==='running';
-  const isStopped=state.status==='running'&&motion.cartStopped;
-  $('start').disabled=!canDrive||paused;
-  const driveLabel=state.status==='running'?(isStopped?'発車':'停車'):'出発';
-  $('start').innerHTML=(state.status==='running'&&!isStopped?STOP_ICON:UI_ICONS.play)+'<span>'+driveLabel+'</span>';
-  $('start').setAttribute('aria-label',state.status==='running'?(isStopped?'スティーブを発車させる':'スティーブを停車させる'):'出発');
-  $('start').setAttribute('aria-pressed',String(isStopped));
-  $('pause').disabled=state.status!=='running';
-  $('pause').innerHTML=paused?UI_ICONS.play:UI_ICONS.pause;
-  $('pause').setAttribute('aria-label',paused?'つづける':'一時停止');
-  $('pause').setAttribute('aria-pressed',String(paused));
-  const currentStageName=stageName(state.level);
-  if($('stage-number').textContent!==currentStageName)$('stage-number').textContent=currentStageName;
-  $('message').textContent=paused?'おやすみ中。つづけるボタンで再開。':state.status==='ready'?'出発でトロッコを走らせよう。':state.status==='won'?'脱出成功！':state.status==='lost'?'つかまった！ レールを変えて、もう一度。':motion.fuse?'シュー……！ はやく、はなれて！':motion.cartStopped?'停車中。線路をつないでから発車しよう。':motion.elapsed<5500?'トロッコが出発！ もうすぐクリーパーが来る。':'歩いて追いかけてきた！ 右下の駅までレールをつなごう。';
-  positionActors();
+ if(!state)return;
+ const config=WORLDS[state.world],gap=state.tiles.indexOf(null),active=state.status==='running'&&!paused;
+ if(selectedTile!==null&&!canEdit(state,selectedTile))selectedTile=null;
+ $('board').innerHTML=state.tiles.map((tile,i)=>{
+  const editable=active&&canEdit(state,i),reserved=i===state.reserved;
+  if(!tile&&state.world!=='nether')return '<div class="tile empty" aria-label="空きマス"></div>';
+  const actionable=editable&&(state.world==='end'?ports.cross.some(d=>neighbor(gap,d)===i):state.world==='mine'?tile?.type!=='cross':state.world==='nether'?!tile||state.placed.has(i):true);
+  const action=state.world==='grass'?'入れ替え':state.world==='mine'?'回転':state.world==='nether'?(tile?'線路を戻す':'線路を置く'):'移動';
+  const mark=i===0?'<span class="badge">▶</span>':i===15?(assets.house?`<img class="house-img" src="${assets.house}" alt="駅">`:'<span class="house">⌂</span>'):'';
+  return `<button data-index="${i}" aria-disabled="${!actionable}" tabindex="${actionable?0:-1}" class="tile ${!tile?'placement-slot':''} ${tile?.used.length?'locked':''} ${reserved?'reserved':''} ${actionable&&state.world==='end'?'movable':''} ${selectedTile===i?'selected-tile':''}" aria-label="${Math.floor(i/4)+1}行${i%4+1}列 ${tile?.used.length?'固定':reserved?'進入中':actionable?action:'操作不可'}${selectedTile===i?' 選択中':''}">${tile?railArtwork(tile.type,'board-'+i):'<span class="place-plus" aria-hidden="true">＋</span>'}${mark}</button>`;
+ }).join('');
+ $('world-queue').hidden=state.world!=='nether';
+ if(state.world==='nether')$('queue-pieces').innerHTML=state.queue.slice(0,3).map((type,i)=>`<span class="queue-piece ${i===0?'next-piece':''}" aria-label="${i+1}番目の線路">${railArtwork(type,'queue-'+i)}</span>`).join('');
+ $('moves').textContent=`${state.moves} 手`;
+ const canDrive=state.status==='ready'||state.status==='running',isStopped=state.status==='running'&&motion.cartStopped;
+ $('start').disabled=!canDrive||paused;
+ const driveLabel=state.status==='running'?(isStopped?'発車':'停車'):'出発';
+ $('start').innerHTML=(state.status==='running'&&!isStopped?STOP_ICON:UI_ICONS.play)+'<span>'+driveLabel+'</span>';
+ $('start').setAttribute('aria-label',state.status==='running'?(isStopped?'スティーブを発車させる':'スティーブを停車させる'):'出発');
+ $('start').setAttribute('aria-pressed',String(isStopped));
+ $('pause').disabled=state.status!=='running';$('pause').innerHTML=paused?UI_ICONS.play:UI_ICONS.pause;
+ $('pause').setAttribute('aria-label',paused?'つづける':'一時停止');$('pause').setAttribute('aria-pressed',String(paused));
+ const stage=config.name+' '+String(state.level+1).padStart(2,'0');
+ if($('stage-number').textContent!==stage)$('stage-number').textContent=stage;
+ if($('world-rule').textContent!==config.rule)$('world-rule').textContent=config.rule;
+ $('message').textContent=paused?'一時停止中。':state.status==='ready'?'出発でトロッコを走らせよう。':state.status==='won'?'脱出成功！':state.status==='lost'?'つかまった！':motion.fuse?'シュー……！ はなれて！':motion.cartStopped?'停車中。線路をつないで発車しよう。':config.description;
+ positionActors();
 }
-
 function move(i){
-  if(state.status!=='running'||paused)return;
-  if(slide(state,i)){tone(420);render()}else tone(120,.04);
+ if(state.status!=='running'||paused||!canEdit(state,i))return;
+ let changed=false;
+ if(state.world==='grass'){
+  if(selectedTile===null){selectedTile=i;tone(320,.04);render();return;}
+  if(selectedTile===i){selectedTile=null;render();return;}
+  changed=swap(state,selectedTile,i);selectedTile=null;
+ }else if(state.world==='mine')changed=rotate(state,i);
+ else if(state.world==='nether')changed=state.tiles[i]?removePlaced(state,i):build(state,i);
+ else changed=slide(state,i);
+ if(changed){tone(420);render()}else tone(120,.04);
 }
 $('board').addEventListener('pointerdown',e=>{
   if(state.status!=='running'||paused){pointer=null;return;}
@@ -144,6 +158,7 @@ $('board').addEventListener('pointerup',e=>{
   const p=pointer;pointer=null;
   const dx=e.clientX-p.x,dy=e.clientY-p.y;
   if(Math.hypot(dx,dy)>18){
+    if(state.world!=='end')return;
     const d=Math.abs(dx)>Math.abs(dy)?(dx>0?1:3):(dy>0?2:0);
     if(neighbor(p.i,d)!==state.tiles.indexOf(null))return;
   }
@@ -160,12 +175,15 @@ $('start').onclick=()=>{
   else if(state.status==='running'){
     motion.cartStopped=!motion.cartStopped;
     motion.movingA=!motion.cartStopped&&Boolean(motion.segment);
+    if(WORLDS[selectedWorld].pausePursuitOnBrake){
+      if(motion.cartStopped){motion.movingB=false;stopFuseSound()}else if(motion.fuse>0)beginFuseSound();
+    }
     tone(motion.cartStopped?220:520,.07);
   }else return;
   render();
 };
 $('reset').onclick=reset;$('again').onclick=reset;
-$('pause').onclick=()=>{paused=!paused;last=null;if(paused)stopFuseSound();else if(motion.fuse>0)beginFuseSound();render()};
+$('pause').onclick=()=>{paused=!paused;last=null;if(paused)stopFuseSound();else if(motion.fuse>0&&!brakeFreezesWorld())beginFuseSound();render()};
 $('sound').onclick=()=>setSound(!audio.settings.enabled);
 document.addEventListener('visibilitychange',()=>{
   audio.setVisible(!document.hidden);
@@ -175,7 +193,7 @@ document.addEventListener('visibilitychange',()=>{
 
 function finish(win){
   stopFuseSound();
-  if(win){tone(850,.25);render();collectionUI.beginReward(runId,state.level);journey.complete(state.level);return;}
+  if(win){tone(850,.25);render();collectionUI.beginReward(runId,state.level,state.world);journey.complete(state.level);return;}
   $('overlay').hidden=false;$('result-icon').textContent=win?'🏡':'💥';
   $('result-title').textContent=win?'にげきった！':'ドカーン！';
   $('result-text').textContent=win?`${state.moves}回のスライドで、駅に到着。`:'次はどこにつなごう？ もう一度チャレンジ。';
@@ -187,7 +205,7 @@ function tick(now){
   const delta=last===null?0:Math.min(now-last,100);last=now;
   if(state.status==='running'&&!paused){
     const previousFuse=motion.fuse;
-    const changed=updateMotion(state,motion,delta,{aInterval:1900,bInterval:CREEPER_STEP_MS,fuseMs:CREEPER_FUSE_MS});
+    const changed=updateMotion(state,motion,delta,{...WORLDS[selectedWorld],fuseMs:CREEPER_FUSE_MS});
     if(motion.fuse>0&&previousFuse===0)beginFuseSound();
     else if(motion.fuse===0&&previousFuse>0)stopFuseSound();
     if(changed)render();
@@ -197,28 +215,37 @@ function tick(now){
   requestAnimationFrame(tick);
 }
 
-const screenIds={title:'title-screen',game:'game-screen',guide:'guide-screen',options:'options-screen',reward:'reward-screen'};
+const screenIds={title:'title-screen',game:'game-screen',guide:'guide-screen',options:'options-screen',reward:'reward-screen',world:'world-screen'};
 function showScreen(name){
   if(name!=='game'&&state.status==='running'){paused=true;last=null;stopFuseSound();render()}
   document.body.dataset.screen=name;
   for(const [key,id] of Object.entries(screenIds))$(id).hidden=key!==name;
   window.scrollTo(0,0);
   if(name==='game'){measureBoard();positionActors()}
-  const target=name==='title'?$('play-game'):name==='game'?$('start'):$(screenIds[name]).querySelector('button');
+  const target=name==='title'?$('play-game'):name==='game'?$('start'):name==='world'?$('world-'+selectedWorld):$(screenIds[name]).querySelector('button');
   target?.focus({preventScroll:true});
 }
 let collectionStorage;
 try{collectionStorage=window.localStorage}catch{}
-collectionUI=createCatalogUI({showScreen,playTone:tone,storage:collectionStorage,audioSettings:()=>audio.settings,onContinue:level=>{
+collectionUI=createCatalogUI({showScreen,playTone:tone,storage:collectionStorage,audioSettings:()=>audio.settings,onContinue:(level,world)=>{
+  if(isWorld(world)){selectedWorld=world;saveWorld(audioStorage,world)}
   journey.complete(level);reset();showScreen('game');
 }});
-$('play-game').onclick=()=>{if(collectionUI.resumeReward())return;reset();showScreen('game')};
+$('play-game').onclick=()=>{
+  if(collectionUI.resumeReward())return;
+  for(const id of Object.keys(WORLDS))$('world-'+id).setAttribute('aria-pressed',String(id===selectedWorld));
+  showScreen('world');
+};
+for(const id of Object.keys(WORLDS))$('world-'+id).onclick=()=>{selectedWorld=id;saveWorld(audioStorage,id);reset();showScreen('game');tone(520,.1)};
+$('world-back').onclick=()=>showScreen('title');
 $('open-guide').onclick=()=>collectionUI.openCollection('title');
 $('open-options').onclick=()=>{audio.unlock();renderAudioOptions();showScreen('options')};
 $('options-done').onclick=()=>showScreen('title');
 $('back-title').onclick=()=>showScreen('title');
 document.querySelectorAll('[data-back-title]').forEach(button=>button.onclick=()=>showScreen('title'));
 renderAudioOptions();renderActorImage('steve');renderActorImage('creeper');
+const pendingWorld=collectionUI.pendingWorld();
+if(isWorld(pendingWorld)){selectedWorld=pendingWorld;saveWorld(audioStorage,pendingWorld)}
 const pendingLevel=collectionUI.pendingLevel();
 if(Number.isSafeInteger(pendingLevel))journey.complete(pendingLevel);
 reset();collectionUI.resumeReward();requestAnimationFrame(tick);

@@ -1,7 +1,8 @@
 // Minimal DOM harness for startup, navigation, continuous frames, and pause behavior.
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {generatePuzzle} from '../engine.mjs';
+import {generatePuzzle,generateWorldPuzzle} from '../engine.mjs';
+import {WORLDS} from '../worlds.mjs';
 import {JOURNEY_KEY} from '../journey.mjs';
 class Element{
  constructor(id){this.id=id;this.dataset={};this.hidden=false;this.innerHTML='';this.clientWidth=400;this.clientHeight=400;this.offsetLeft=10;this.offsetTop=10;this.style={setProperty(k,v){this[k]=v}};const classes=new Set();this.classList={add:x=>classes.add(x),remove:x=>classes.delete(x),toggle:(x,v)=>v?classes.add(x):classes.delete(x),contains:x=>classes.has(x)};this.events={};this.value=id==='pace'?'easy':'0'}
@@ -19,6 +20,8 @@ globalThis.Image=class{set src(v){this.url=v;if(!v.includes('house'))queueMicrot
 let frame;globalThis.requestAnimationFrame=fn=>frame=fn;
 await import('../app.mjs');
 await Promise.resolve();
+function enterWorld(world){el('play-game').onclick();assert.equal(document.body.dataset.screen,'world');el('world-'+world).onclick();}
+
 assert.ok(el('actor-steve').innerHTML.includes('assets/steve.png'));
 assert.ok(el('actor-creeper').innerHTML.includes('assets/creeper.png'));
 assert.ok(!el('actor-creeper').innerHTML.includes('class="cart"'));
@@ -32,7 +35,7 @@ assert.equal(el('bgm-value').textContent,'27');assert.equal(el('sfx-value').text
 assert.equal(el('sound-on')['aria-pressed'],'true');assert.equal(el('sound')['aria-pressed'],'true');
 el('sound').onclick();assert.equal(el('sound-off')['aria-pressed'],'true');
 el('options-done').onclick();assert.equal(document.body.dataset.screen,'title');
-el('play-game').onclick();assert.equal(document.body.dataset.screen,'game');
+enterWorld('end');assert.equal(document.body.dataset.screen,'game');
 el('start').onclick();frame(0);
 const initial={x:parseFloat(el('actor-steve').style.left),y:parseFloat(el('actor-steve').style.top)};
 for(let i=1;i<=40;i++)frame(i*16);
@@ -47,7 +50,7 @@ el('back-title').onclick();assert.equal(document.body.dataset.screen,'title');
 el('open-guide').onclick();assert.equal(document.body.dataset.screen,'guide');
 assert.ok(el('catalog-grid').innerHTML.includes('スティーブ'));
 el('catalog-back').onclick();assert.equal(document.body.dataset.screen,'title');
-el('play-game').onclick();
+enterWorld('end');
 function slidePanel(index){
  const target={closest:()=>({dataset:{index:String(index)}})};
  el('board').events.pointerdown({target,clientX:0,clientY:0});
@@ -84,5 +87,28 @@ el('reward-book').onclick();assert.equal(document.body.dataset.screen,'guide');
 el('catalog-back').onclick();assert.equal(document.body.dataset.screen,'reward');
 await new Promise(resolve=>setTimeout(resolve,950));
 el('reward-next').onclick();assert.equal(document.body.dataset.screen,'game');
-assert.equal(el('stage-number').textContent,'坑道 02');assert.equal(JSON.parse(saved.get(JOURNEY_KEY)).level,1);assert.equal(JSON.parse(saved.get(key)).reward,null);
-console.log('PASS: options, sound, movement, global pause, editable cart brake, restart, clear → card → next stage');
+assert.equal(el('stage-number').textContent,'エンド 02');assert.equal(JSON.parse(saved.get(JOURNEY_KEY)).level,1);assert.equal(JSON.parse(saved.get(key)).reward,null);
+let testClock=50000;
+for(const world of ['grass','mine','nether']){
+ el('back-title').onclick();enterWorld(world);
+ assert.equal(document.body.dataset.world,world);assert.equal(el('world-rule').textContent,WORLDS[world].rule);
+ assert.equal(el('world-queue').hidden,world!=='nether');
+ const plan=generateWorldPuzzle(world,JSON.parse(saved.get(JOURNEY_KEY)).seed);
+ el('start').onclick();el('start').onclick();
+ if(world==='grass'){
+  for(let i=0;i<100;i++){frame(testClock);testClock+=100}
+  assert.equal(el('actor-creeper').hidden,true,'grass brake must stop the spawn clock too');
+ }
+ for(const action of plan.solution){
+  if(action.kind==='swap'){slidePanel(action.a);slidePanel(action.b)}else slidePanel(action.index);
+ }
+ assert.equal(el('moves').textContent,plan.solution.length+' 手',world+' operation count');
+ el('start').onclick();
+ for(let i=0;i<350;i++){frame(testClock);testClock+=100}
+ assert.equal(document.body.dataset.screen,'reward',world+' should clear');
+ for(let i=0;i<5;i++)el('mine-block').onclick();
+ assert.equal(JSON.parse(saved.get(key)).reward.world,world);
+ await new Promise(resolve=>setTimeout(resolve,950));el('reward-next').onclick();
+ assert.equal(document.body.dataset.screen,'game');
+}
+console.log('PASS: all four world menus and operations, grass brake, Nether supply, rewards/world persistence, options, and sequential progression');

@@ -1,3 +1,4 @@
+import {WORLDS,isWorld,featuredWeight} from './worlds.mjs?v=0.3.1';
 import {CHARACTERS,BY_ID,SAVE_KEY,BREAK_HITS} from './catalog-data.mjs?v=0.2.8';
 export const REVIEW_BACKUP_KEY='micra-rails.collection.review-backup.v0.2.7';
 const REVIEW_TAG='all-cards-v0.2.7';
@@ -23,9 +24,9 @@ export function cleanCollection(input){
  const r=input.reward;
  if(r&&typeof r.id==='string'&&Object.hasOwn(BY_ID,r.id)&&typeof r.runId==='string'&&typeof r.shiny==='boolean'&&Number.isSafeInteger(r.level)&&r.level>=0&&r.level<Number.MAX_SAFE_INTEGER){
   if(r.phase==='mining'&&Number.isInteger(r.hits)&&r.hits>=0&&r.hits<BREAK_HITS){
-   clean.reward={id:r.id,runId:r.runId,shiny:r.shiny,level:r.level,phase:'mining',hits:r.hits};
+   clean.reward={id:r.id,runId:r.runId,shiny:r.shiny,level:r.level,world:isWorld(r.world)?r.world:'end',phase:'mining',hits:r.hits};
   }else if(r.phase==='revealed'&&clean.counts[r.id]&&(!r.shiny||clean.shiny[r.id])){
-   clean.reward={id:r.id,runId:r.runId,shiny:r.shiny,level:r.level,phase:'revealed',hits:BREAK_HITS,fresh:Boolean(r.fresh),firstShiny:Boolean(r.firstShiny),count:clean.counts[r.id]};
+   clean.reward={id:r.id,runId:r.runId,shiny:r.shiny,level:r.level,world:isWorld(r.world)?r.world:'end',phase:'revealed',hits:BREAK_HITS,fresh:Boolean(r.fresh),firstShiny:Boolean(r.firstShiny),count:clean.counts[r.id]};
   }
  }
  if(clean.reward)clean.lastRun=clean.reward.runId;
@@ -33,18 +34,20 @@ export function cleanCollection(input){
 }
 
 // Adapted from kyoryu-island-play: early discoveries, duplicate protection, bosses, shiny variants.
-export function rollCard(state,rng=Math.random){
+export function rollCard(state,rng=Math.random,worldId='end'){
+ const world=WORLDS[isWorld(worldId)?worldId:'end'];
  const missing=normal.filter(c=>!state.counts[c.id]);
  const found=normal.filter(c=>state.counts[c.id]);
  const missingBosses=bosses.filter(c=>!state.counts[c.id]);
  let pool;
  if(found.length>=10&&missingBosses.length===bosses.length)pool=missingBosses;
  else if(missing.length&&(state.draws<3||state.duplicates>=2))pool=missing;
- else if(rng()<.02)pool=bosses;
+ else if(rng()<world.bossRate)pool=bosses;
  else pool=missing.length&&(!found.length||rng()<.7)?missing:found;
  if(!pool.length)pool=normal;
- const chosen=pool[Math.min(pool.length-1,Math.floor(rng()*pool.length))];
- return {id:chosen.id,shiny:rng()<.05};
+ const total=pool.reduce((n,c)=>n+featuredWeight(c,worldId),0);let point=rng()*total,chosen=pool[pool.length-1];
+ for(const c of pool){point-=featuredWeight(c,worldId);if(point<0){chosen=c;break}}
+ return {id:chosen.id,shiny:rng()<world.shinyRate};
 }
 
 export function createCollectionStore(storage,rng=Math.random){
@@ -68,11 +71,11 @@ export function createCollectionStore(storage,rng=Math.random){
    if(state.reward?.phase==='revealed')state.reward.count=state.counts[state.reward.id];
    state.reviewUnlock=REVIEW_TAG;persist();return true;
   },
-  beginReward(runId,level){
+  beginReward(runId,level,worldId='end'){
    if(state.reward)return state.reward;
    if(state.lastRun===runId)return null;
    if(typeof runId!=='string'||!Number.isSafeInteger(level)||level<0||level>=Number.MAX_SAFE_INTEGER)throw Error('Invalid reward context');
-   state.reward={...rollCard(state,rng),runId,level,hits:0,phase:'mining'};
+   state.reward={...rollCard(state,rng,worldId),runId,level,world:isWorld(worldId)?worldId:'end',hits:0,phase:'mining'};
    state.lastRun=runId;persist();return state.reward;
   },
   tapBlock(){

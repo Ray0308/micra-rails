@@ -2,7 +2,7 @@ import {runStartup} from './startup.mjs?v=0.5.3';
 import {railArtwork} from './rail-art.mjs?v=0.4.4';
 import {renderTiles} from './tile-view.mjs?v=0.4.3';
 import {WORLDS,isWorld,loadWorld,saveWorld} from './worlds.mjs?v=0.5.6';
-import {createJourneyStore} from './journey.mjs?v=0.2.5';
+import {createJourneyStore} from './journey.mjs?v=0.5.8';
 import {createAudioController} from './audio.mjs?v=0.4.8';
 import {createCatalogUI} from './catalog-ui.mjs?v=0.5.7';
 import {create,slide,start,ports,neighbor,canEdit,swap,rotate,build,removePlaced} from './engine.mjs?v=0.5.6';
@@ -191,6 +191,12 @@ $('start').onclick=()=>{
   }else return;
   render();
 };
+function changeMap(){
+ if(!['ready','running','lost'].includes(state.status))return;
+ tone(300,.12);journey.reroll();reset();showScreen('game');$('start').focus({preventScroll:true});
+}
+$('change-map').onclick=changeMap;
+$('death-change-map').onclick=changeMap;
 $('reset').onclick=()=>{tone(300,.12);reset()};$('again').onclick=()=>{tone(300,.12);reset();$('start').focus({preventScroll:true})};
 $('pause').onclick=()=>{tone(paused?520:260,.12);paused=!paused;last=null;if(paused)stopFuseSound();else if(motion.fuse>0&&!brakeFreezesWorld())beginFuseSound();render()};
 $('sound').onclick=()=>setSound(!audio.settings.enabled);

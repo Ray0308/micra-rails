@@ -12,6 +12,10 @@ export function createJourneyStore(storage,rng=Math.random){
  save();
  return {
   get state(){return {...current}},
+  reroll(){
+   const rolled=seed();
+   current={...current,seed:rolled===current.seed?(rolled+0x9E3779B9)>>>0:rolled};save();return {...current};
+  },
   complete(clearedLevel){
    if(!validLevel(clearedLevel)||clearedLevel<current.level)return false;
    const rolled=seed();

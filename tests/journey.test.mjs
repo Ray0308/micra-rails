@@ -26,3 +26,11 @@ test('a persisted pending reward can recover progression without skipping twice'
  const storage=memory(),store=createJourneyStore(storage);assert.ok(store.complete(2));assert.equal(store.state.level,3);
  const restored=createJourneyStore(storage);assert.equal(restored.complete(2),false);assert.equal(restored.state.level,3);
 });
+
+test('reroll changes only the seed, persists, and differs even with a repeated random value',()=>{
+ const storage=memory(),store=createJourneyStore(storage,()=>.4);store.complete(8);
+ for(let i=0;i<10;i++){
+  const before=store.state,after=store.reroll();assert.equal(after.level,9);assert.notEqual(after.seed,before.seed);
+  assert.deepEqual(createJourneyStore(storage,()=>.9).state,after);
+ }
+});

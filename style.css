@@ -334,3 +334,8 @@ body.booting> :not(.boot-screen):not(.version-badge){visibility:hidden}
 @media(orientation:landscape) and (max-height:520px){.credits-screen{padding:28px 18px}.credits-panel{padding:18px 24px}.credits-panel h1{margin-bottom:18px}.credits-list{gap:12px;margin-bottom:20px}.credits-list dt{margin-bottom:2px}.credits-list dd{font-size:16px}.title-menu-bottom{gap:7px}.title-menu-bottom .mc-button{padding:6px;font-size:14px}}
 
 .world-choice>span.world-difficulty{position:absolute;left:7px;top:6px;font:9px ui-monospace,monospace;color:#d9decf;letter-spacing:1px}
+
+.map-help{display:flex;justify-content:center;margin-top:6px}
+.play-console .map-help button{min-height:42px;width:100%;padding:8px 12px;font-size:12px;letter-spacing:1px}
+.play-console #overlay #death-change-map{font-size:14px;min-height:42px}
+@media(orientation:landscape) and (max-height:440px){.death-actions{margin-top:16px;gap:6px}.play-console #overlay button{min-height:36px;padding:6px}.play-console #overlay #death-change-map{min-height:34px}}

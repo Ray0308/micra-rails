@@ -124,4 +124,19 @@ explodeCart();assert.equal(el('overlay').hidden,false);
 assert.equal(el('result-title').textContent,'YOUdead!');assert.equal(el('result-text').textContent,'クリーパーに爆破された');
 el('again').onclick();assert.equal(el('overlay').hidden,true);assert.equal(el('stage-number').textContent,deathStage);assert.equal(el('moves').textContent,'0 手');assert.equal(el('start').disabled,false);
 explodeCart();el('death-title').onclick();assert.equal(document.body.dataset.screen,'title');assert.equal(el('overlay').hidden,true);
-console.log('PASS: four worlds, rewards, options, continuous motion, death screen respawn and return to title');
+const drawsBeforeMapChange=JSON.parse(saved.get(key)).draws;
+for(const world of ['grass','mine','nether','end']){
+ enterWorld(world);const stage=el('stage-number').textContent,before=JSON.parse(saved.get(JOURNEY_KEY));
+ el('start').onclick();el('pause').onclick();el('change-map').onclick();
+ const after=JSON.parse(saved.get(JOURNEY_KEY));
+ assert.equal(after.level,before.level);assert.notEqual(after.seed,before.seed);
+ assert.equal(document.body.dataset.world,world);assert.equal(el('stage-number').textContent,stage);assert.equal(el('moves').textContent,'0 手');
+ assert.equal(el('start').disabled,false);assert.equal(el('pause').disabled,true);assert.equal(el('overlay').hidden,true);
+ const newBoard=el('board').innerHTML;el('reset').onclick();assert.equal(el('board').innerHTML,newBoard);assert.deepEqual(JSON.parse(saved.get(JOURNEY_KEY)),after);
+ assert.equal(JSON.parse(saved.get(key)).draws,drawsBeforeMapChange);assert.equal(JSON.parse(saved.get(key)).reward,null);
+ el('back-title').onclick();
+}
+enterWorld('end');explodeCart();const lostStage=el('stage-number').textContent,lostSeed=JSON.parse(saved.get(JOURNEY_KEY)).seed;
+el('death-change-map').onclick();assert.equal(el('overlay').hidden,true);assert.equal(el('stage-number').textContent,lostStage);assert.notEqual(JSON.parse(saved.get(JOURNEY_KEY)).seed,lostSeed);
+assert.equal(JSON.parse(saved.get(key)).draws,drawsBeforeMapChange);
+console.log('PASS: four worlds, rewards, normal collection, death screen and free map rerolls without advancing or granting rewards');

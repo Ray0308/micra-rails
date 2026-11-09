@@ -339,3 +339,15 @@ body.booting> :not(.boot-screen):not(.version-badge){visibility:hidden}
 .play-console .map-help button{min-height:42px;width:100%;padding:8px 12px;font-size:12px;letter-spacing:1px}
 .play-console #overlay #death-change-map{font-size:14px;min-height:42px}
 @media(orientation:landscape) and (max-height:440px){.death-actions{margin-top:16px;gap:6px}.play-console #overlay button{min-height:36px;padding:6px}.play-console #overlay #death-change-map{min-height:34px}}
+
+/* Goal station: readable sign, timber depth and a framed destination tile. */
+.tile.goal-tile::before{box-shadow:inset 0 0 0 2px #e8c775,inset 0 0 0 4px #674b2299;z-index:2}
+.goal-marker{position:absolute;left:50%;top:3%;width:76%;height:86%;transform:translateX(-50%);z-index:3;pointer-events:none;user-select:none}
+.goal-sign{position:absolute;top:0;left:0;width:100%;height:24%;display:flex;align-items:center;justify-content:center;gap:5%;background:linear-gradient(#f4d992,#d6ac54);border:1px solid #4c351c;box-shadow:inset 0 1px #fff0bb,inset 0 -2px #9a6d31,0 2px #342615;color:#332619;font-size:clamp(9px,2.8vw,17px);font-weight:900;letter-spacing:1px;line-height:1;text-shadow:0 1px #ffe7a0;white-space:nowrap}
+.goal-sign::before,.goal-sign::after{content:'';position:absolute;top:40%;width:2px;height:2px;background:#7b592d;box-shadow:0 1px #ffe8a4}
+.goal-sign::before{left:4%}.goal-sign::after{right:4%}
+.goal-checker{display:block;width:15%;aspect-ratio:1;background:conic-gradient(#faf4dc 25%,#3a3329 0 50%,#faf4dc 0 75%,#3a3329 0) 0 0 / 50% 50%;border:1px solid #735526;flex:none}
+.goal-station{position:absolute;left:12%;top:25%;width:76%;height:70%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(2px 3px #21170d99);z-index:1;pointer-events:none}
+.goal-platform{position:absolute;left:8%;bottom:0;width:84%;height:8%;background:#9b9b88;border-top:2px solid #ded7b4;box-shadow:0 3px #4d4b3e,1px 4px 2px #0006}
+.goal-station-fallback{position:absolute;inset:24% 0 5%;display:grid;place-items:center;color:#ffdfa0;font-size:48px;text-shadow:2px 3px #3c281c}
+@media(orientation:landscape) and (max-height:540px){.goal-sign{font-size:clamp(9px,2.5vh,15px)}}

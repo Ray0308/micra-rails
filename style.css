@@ -351,3 +351,16 @@ body.booting> :not(.boot-screen):not(.version-badge){visibility:hidden}
 .goal-platform{position:absolute;left:8%;bottom:0;width:84%;height:8%;background:#9b9b88;border-top:2px solid #ded7b4;box-shadow:0 3px #4d4b3e,1px 4px 2px #0006}
 .goal-station-fallback{position:absolute;inset:24% 0 5%;display:grid;place-items:center;color:#ffdfa0;font-size:48px;text-shadow:2px 3px #3c281c}
 @media(orientation:landscape) and (max-height:540px){.goal-sign{font-size:clamp(9px,2.5vh,15px)}}
+
+/* Keep both rail corridors (38–62%) free; station/sign stay in the corners. */
+.goal-marker{inset:0;left:0;top:0;width:100%;height:100%;transform:none}
+.goal-sign{left:auto;right:3%;top:4%;width:33%;height:20%;font-size:clamp(6px,1.7vw,10px);letter-spacing:.3px;gap:3%}
+.goal-sign::before,.goal-sign::after{display:none}
+.goal-station{left:auto;right:1%;top:auto;bottom:6%;width:34%;height:33%}
+.goal-platform{left:auto;right:1%;bottom:3%;width:34%;height:4%;border-top-width:1px}
+.goal-station-fallback{inset:auto 2% 4% auto;width:32%;height:34%;font-size:28px}
+.goal-entry{position:absolute;color:#ffe098;text-shadow:1px 1px #3d2817,-1px -1px #3d2817;font:bold 18px/1 ui-monospace,monospace;pointer-events:none}
+.goal-entry-north{top:8%;left:50%;transform:translateX(-50%)}
+.goal-entry-west{left:8%;top:50%;transform:translateY(-50%)}
+.tile.goal-tile .rail-art{filter:drop-shadow(0 0 1px #ffe6a5)}
+#reward-screen[data-material-ready="false"] .mining-stage{visibility:hidden}

@@ -62,6 +62,8 @@ function slidePanel(index){
  el('board').events.pointerdown({target,clientX:0,clientY:0});
  el('board').events.pointerup({clientX:0,clientY:0});
 }
+const NormalImage=globalThis.Image,heldCardLoads=[];
+globalThis.Image=class extends NormalImage{set src(v){if(v.includes('assets/cards/')){this.url=v;heldCardLoads.push(this)}else super.src=v}get src(){return this.url}};
 const solution=generatePuzzle(JSON.parse(saved.get(JOURNEY_KEY)).seed).solution;
 assert.ok(!elements.has('level'),'stage selection must be removed');
 slidePanel(solution[0]);
@@ -83,7 +85,10 @@ assert.equal(document.body.dataset.screen,'reward','winning must lead to block m
 assert.equal(el('reward-screen').dataset.phase,'mining');
 for(let i=0;i<4;i++)el('mine-block').onclick();
 assert.equal(el('reward-screen').dataset.phase,'mining');
-el('mine-block').onclick();assert.equal(el('reward-screen').dataset.phase,'revealed');
+el('mine-block').onclick();assert.equal(el('reward-screen').dataset.phase,'preparing');assert.equal(el('reward-card').hidden,true);
+assert.ok(heldCardLoads.length>0,'card image should be requested during mining');
+globalThis.Image=NormalImage;for(const image of heldCardLoads)image.onload?.();
+await new Promise(resolve=>setImmediate(resolve));assert.equal(el('reward-screen').dataset.phase,'revealed');
 assert.equal(el('reward-card').hidden,false);
 const key='micra-rails.collection.v1';
 assert.equal(JSON.parse(saved.get(key)).draws,1);

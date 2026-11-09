@@ -1,10 +1,10 @@
-import {runStartup} from './startup.mjs?v=0.5.3';
+import {runStartup} from './startup.mjs?v=0.6.0';
 import {railArtwork} from './rail-art.mjs?v=0.4.4';
 import {renderTiles} from './tile-view.mjs?v=0.4.3';
 import {WORLDS,isWorld,loadWorld,saveWorld} from './worlds.mjs?v=0.5.6';
 import {createJourneyStore} from './journey.mjs?v=0.5.8';
 import {createAudioController} from './audio.mjs?v=0.4.8';
-import {createCatalogUI} from './catalog-ui.mjs?v=0.5.7';
+import {createCatalogUI} from './catalog-ui.mjs?v=0.6.0';
 import {create,slide,start,ports,neighbor,canEdit,swap,rotate,build,removePlaced} from './engine.mjs?v=0.5.6';
 import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS} from './motion.mjs?v=0.3.1';
 
@@ -125,7 +125,7 @@ function render(){
   if(!tile&&state.world!=='nether')return '<div class="tile empty" aria-label="空きマス"></div>';
   const actionable=editable&&(state.world==='end'?ports.cross.some(d=>neighbor(gap,d)===i):state.world==='mine'?tile?.type!=='cross':state.world==='nether'?!tile||state.placed.has(i):true);
   const action=state.world==='grass'?'入れ替え':state.world==='mine'?'回転':state.world==='nether'?(tile?'線路を戻す':'線路を置く'):'移動';
-  const mark=i===0?'<span class="badge">▶</span>':i===15?`<span class="goal-marker" aria-hidden="true"><span class="goal-sign"><i class="goal-checker"></i>ゴール</span>${assets.house?`<img class="goal-station" src="${assets.house}" alt="" draggable="false">`:'<span class="goal-station-fallback">⌂</span>'}<span class="goal-platform"></span></span>`:'';
+  const mark=i===0?'<span class="badge">▶</span>':i===15?`<span class="goal-marker" aria-hidden="true"><span class="goal-sign"><i class="goal-checker"></i>ゴール</span>${assets.house?`<img class="goal-station" src="${assets.house}" alt="" draggable="false">`:'<span class="goal-station-fallback">⌂</span>'}<span class="goal-platform"></span>${ports[tile.type].includes(0)?'<span class="goal-entry goal-entry-north">⌄</span>':''}${ports[tile.type].includes(3)?'<span class="goal-entry goal-entry-west">›</span>':''}</span>`:'';
   return `<button data-index="${i}" aria-disabled="${!actionable}" tabindex="${actionable?0:-1}" class="tile ${i===15?'goal-tile':''} ${!tile?'placement-slot':''} ${tile?.used.length?'locked':''} ${reserved?'reserved':''} ${actionable&&state.world==='end'?'movable':''} ${selectedTile===i?'selected-tile':''}" aria-label="${Math.floor(i/4)+1}行${i%4+1}列 ${i===15?'ゴールの駅、':''}${tile?.used.length?'固定':reserved?'進入中':actionable?action:'操作不可'}${selectedTile===i?' 選択中':''}">${tile?railArtwork(tile.type,'board-'+i):'<span class="place-plus" aria-hidden="true">＋</span>'}${mark}</button>`;
  }));
  $('world-queue').hidden=state.world!=='nether';

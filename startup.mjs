@@ -1,5 +1,6 @@
 export const STUDIO_LOGO='assets/ray-edu-labo.png?v=0.5.3';
 export const STARTUP_ASSETS=[
+ 'assets/ui-stone.svg',
  STUDIO_LOGO,
  'assets/rail-straight-v044.png','assets/rail-curve-v044.png','assets/rail-cross-v044.png',
  'assets/steve.png?v=0.1.4','assets/creeper.png?v=0.1.4','assets/station.svg?v=0.1.4',

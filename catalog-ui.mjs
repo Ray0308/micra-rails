@@ -1,10 +1,13 @@
+import {loadImage} from './startup.mjs?v=0.6.0';
 import {CATEGORIES,CHARACTERS,BY_ID,BREAK_HITS} from './catalog-data.mjs?v=0.2.8';
 import {createCollectionStore} from './catalog-model.mjs?v=0.3.1';
 const $=id=>document.getElementById(id);
 
 export function createCatalogUI({showScreen,playTone,playMining=()=>playTone(250,.08),playReward=shiny=>playTone(shiny?1000:750,.25),onContinue,storage,audioSettings=()=>({enabled:true,sfx:100})}){
  const store=createCollectionStore(storage);
- let category='friends',page=0,returnTo='title',detail=null,detailShiny=false,openingTimer;
+ let category='friends',page=0,returnTo='title',detail=null,detailShiny=false,openingTimer,rewardRenderVersion=0,stoneReady=false;
+ const assetJobs=new Map();
+ function warmAsset(src){if(!assetJobs.has(src))assetJobs.set(src,loadImage(src,{timeoutMs:4000}));return assetJobs.get(src)}
  const dialog=$('card-dialog');
  const pageSize=()=>window.innerWidth>=760?6:4;
  const discovered=()=>CHARACTERS.filter(c=>store.state.counts[c.id]).length;
@@ -12,16 +15,16 @@ export function createCatalogUI({showScreen,playTone,playMining=()=>playTone(250
   $('collection-save-warning').hidden=!store.saveError;
   $('collection-save-warning').textContent=store.saveError?'この端末に保存できません。タブを閉じると記録が消えることがあります。':'';
  }
- function art(c){
-  return `<div class="card-portrait ${c.image?'has-image':''}" style="--mob-color:${c.color};--mob-skin:${c.skin}"><div class="pixel-character" aria-hidden="true"><i class="pixel-head"></i><i class="pixel-body"></i><i class="pixel-feet"></i></div>${c.image?`<img data-card-art loading="lazy" decoding="async" src="${c.image}?v=0.1.8" alt="${c.name}" draggable="false">`:''}</div>`;
+ function art(c,eager=false){
+  return `<div class="card-portrait ${c.image?'has-image':''}" style="--mob-color:${c.color};--mob-skin:${c.skin}"><div class="pixel-character" aria-hidden="true"><i class="pixel-head"></i><i class="pixel-body"></i><i class="pixel-feet"></i></div>${c.image?`<img data-card-art loading="${eager?'eager':'lazy'}" decoding="async" src="${c.image}?v=0.1.8" alt="${c.name}" draggable="false">`:''}</div>`;
  }
  function bindArt(root){
   root.querySelectorAll('img[data-card-art]').forEach(image=>{
    image.onerror=()=>{image.hidden=true;image.parentElement.classList.remove('has-image')};
   });
  }
- function cardMarkup(c,shiny=false){
-  return `<div class="card-rarity">${shiny?'✦ キラカード':CATEGORIES.find(g=>g.id===c.category).name}</div>${art(c)}<strong class="card-name">${c.name}</strong><span class="card-number">No. ${String(CHARACTERS.indexOf(c)+1).padStart(2,'0')}</span>`;
+ function cardMarkup(c,shiny=false,eager=false){
+  return `<div class="card-rarity">${shiny?'✦ キラカード':CATEGORIES.find(g=>g.id===c.category).name}</div>${art(c,eager)}<strong class="card-name">${c.name}</strong><span class="card-number">No. ${String(CHARACTERS.indexOf(c)+1).padStart(2,'0')}</span>`;
  }
  function renderCollection(){
   const state=store.state;
@@ -113,8 +116,20 @@ export function createCatalogUI({showScreen,playTone,playMining=()=>playTone(250
    return `<i style="--dx:${x}px;--dy:${y}px;--spin:${i*53}deg;--delay:${i%3*.025}s"></i>`;
   }).join('');
  }
- function renderReward(){
+ function renderReward(assetsReady=false,playSound=false){
   const r=store.state.reward;if(!r)return;
+  const version=++rewardRenderVersion;
+  const material=warmAsset('assets/ui-stone.svg');
+  $('reward-screen').dataset.materialReady=String(stoneReady);
+  void material.then(()=>{stoneReady=true;if(store.state.reward?.runId===r.runId)$('reward-screen').dataset.materialReady='true'});
+  const card=BY_ID[r.id],ready=Promise.all([material,...(card.image?[warmAsset(card.image+'?v=0.1.8')]:[])]);
+  if(r.phase==='revealed'&&!assetsReady){
+   clearTimeout(openingTimer);$('reward-screen').dataset.phase='preparing';
+   $('mine-block').disabled=true;$('reward-card').hidden=true;$('reward-actions').hidden=true;
+   $('reward-headline').textContent='お宝を開いています…';
+   void ready.then(()=>{if(version===rewardRenderVersion&&store.state.reward?.runId===r.runId&&document.body.dataset.screen==='reward')renderReward(true,playSound)});
+   return;
+  }
   clearTimeout(openingTimer);
   const revealed=r.phase==='revealed',c=BY_ID[r.id];
   $('reward-screen').dataset.phase=r.phase;
@@ -126,7 +141,8 @@ export function createCatalogUI({showScreen,playTone,playMining=()=>playTone(250
   $('reward-status').textContent=revealed?`${c.name}　× ${r.count}`:'';
   renderCracks(r.hits);saveWarning();
   if(revealed){
-   $('reward-card').classList.toggle('is-shiny',r.shiny);$('reward-card').innerHTML=cardMarkup(c,r.shiny);bindArt($('reward-card'));fragments();
+   $('reward-card').classList.toggle('is-shiny',r.shiny);$('reward-card').innerHTML=cardMarkup(c,r.shiny,true);bindArt($('reward-card'));fragments();
+   if(playSound)playReward(r.shiny);
    $('reward-next').textContent='次の坑道へ';
    $('reward-next').disabled=true;$('reward-book').disabled=true;
    openingTimer=setTimeout(()=>{
@@ -142,7 +158,7 @@ export function createCatalogUI({showScreen,playTone,playMining=()=>playTone(250
   const r=store.tapBlock();renderCracks(r.hits);saveWarning();
   if(r.phase!=='revealed')playMining();
   $('block-cube').animate?.([{transform:'rotateX(-18deg) rotateY(-28deg) translateY(0)'},{transform:'rotateX(-15deg) rotateY(-24deg) translateY(5px)'},{transform:'rotateX(-18deg) rotateY(-28deg) translateY(0)'}],{duration:140});
-  if(r.phase==='revealed'){renderReward();playReward(r.shiny)}
+  if(r.phase==='revealed')renderReward(false,true);
  };
  $('reward-next').onclick=()=>{
   const r=store.state.reward;if(!r||r.phase!=='revealed')return;

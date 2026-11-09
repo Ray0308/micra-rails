@@ -4,7 +4,7 @@ import {renderTiles} from './tile-view.mjs?v=0.4.3';
 import {WORLDS,isWorld,loadWorld,saveWorld} from './worlds.mjs?v=0.5.6';
 import {createJourneyStore} from './journey.mjs?v=0.5.8';
 import {createAudioController} from './audio.mjs?v=0.4.8';
-import {createCatalogUI} from './catalog-ui.mjs?v=0.6.0';
+import {createCatalogUI} from './catalog-ui.mjs?v=0.6.1';
 import {create,slide,start,ports,neighbor,canEdit,swap,rotate,build,removePlaced} from './engine.mjs?v=0.5.6';
 import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS} from './motion.mjs?v=0.3.1';
 

@@ -2,6 +2,8 @@ import {loadImage} from './startup.mjs?v=0.6.0';
 import {CATEGORIES,CHARACTERS,BY_ID,BREAK_HITS} from './catalog-data.mjs?v=0.2.8';
 import {createCollectionStore} from './catalog-model.mjs?v=0.3.1';
 const $=id=>document.getElementById(id);
+const FLOATING=new Set(['allay','bee','bat','parrot','phantom','ghast','happy-ghast','ghastling','ender-dragon','vex','wither','blaze','breeze']);
+
 
 export function createCatalogUI({showScreen,playTone,playMining=()=>playTone(250,.08),playReward=shiny=>playTone(shiny?1000:750,.25),onContinue,storage,audioSettings=()=>({enabled:true,sfx:100})}){
  const store=createCollectionStore(storage);
@@ -9,6 +11,11 @@ export function createCatalogUI({showScreen,playTone,playMining=()=>playTone(250
  const assetJobs=new Map();
  function warmAsset(src){if(!assetJobs.has(src))assetJobs.set(src,loadImage(src,{timeoutMs:4000}));return assetJobs.get(src)}
  const dialog=$('card-dialog');
+ const observedArt=new Set();
+ const artObserver=globalThis.IntersectionObserver?new IntersectionObserver(entries=>{
+  for(const entry of entries)entry.target.classList.toggle('idle-visible',entry.isIntersecting);
+ },{threshold:.05}):null;
+ document.addEventListener('visibilitychange',()=>document.body.classList.toggle('card-animations-paused',document.hidden));
  const pageSize=()=>window.innerWidth>=760?6:4;
  const discovered=()=>CHARACTERS.filter(c=>store.state.counts[c.id]).length;
  function saveWarning(){
@@ -16,11 +23,15 @@ export function createCatalogUI({showScreen,playTone,playMining=()=>playTone(250
   $('collection-save-warning').textContent=store.saveError?'この端末に保存できません。タブを閉じると記録が消えることがあります。':'';
  }
  function art(c,eager=false){
-  return `<div class="card-portrait ${c.image?'has-image':''}" style="--mob-color:${c.color};--mob-skin:${c.skin}"><div class="pixel-character" aria-hidden="true"><i class="pixel-head"></i><i class="pixel-body"></i><i class="pixel-feet"></i></div>${c.image?`<img data-card-art loading="${eager?'eager':'lazy'}" decoding="async" src="${c.image}?v=0.1.8" alt="${c.name}" draggable="false">`:''}</div>`;
+  const idle=/\.gif(?:$|\?)/i.test(c.image||'')?'':FLOATING.has(c.id)?'float':['monsters','bosses'].includes(c.category)?'sway':'bob';
+  const offset=[...c.id].reduce((n,ch)=>n+ch.charCodeAt(0),0);
+  return `<div class="card-portrait ${c.image?'has-image':''}" style="--mob-color:${c.color};--mob-skin:${c.skin};--idle-delay:-${(offset%30)/10}s;--idle-duration:${3.2+(offset%9)*.15}s"><div class="pixel-character" aria-hidden="true"><i class="pixel-head"></i><i class="pixel-body"></i><i class="pixel-feet"></i></div>${c.image?`<img data-card-art ${idle?`data-idle="${idle}"`:""} loading="${eager?'eager':'lazy'}" decoding="async" src="${c.image}?v=0.1.8" alt="${c.name}" draggable="false">`:''}</div>`;
  }
  function bindArt(root){
+  for(const image of observedArt)if(!image.isConnected){artObserver?.unobserve(image);observedArt.delete(image)}
   root.querySelectorAll('img[data-card-art]').forEach(image=>{
-   image.onerror=()=>{image.hidden=true;image.parentElement.classList.remove('has-image')};
+   image.onerror=()=>{image.hidden=true;image.parentElement.classList.remove('has-image');artObserver?.unobserve(image);observedArt.delete(image)};
+   if(image.dataset.idle){if(artObserver){artObserver.observe(image);observedArt.add(image)}else image.classList.add('idle-visible');}
   });
  }
  function cardMarkup(c,shiny=false,eager=false){
@@ -49,6 +60,7 @@ export function createCatalogUI({showScreen,playTone,playMining=()=>playTone(250
   returnTo=from;renderCollection();showScreen('guide');
  }
  function closeDetails(){
+  document.body.classList.remove('card-detail-open');
   if(dialog.open)dialog.close();
   window.speechSynthesis?.cancel();
  }
@@ -67,7 +79,7 @@ export function createCatalogUI({showScreen,playTone,playMining=()=>playTone(250
  }
  function showDetails(id){
   if(!store.state.counts[id])return;
-  detail=id;detailShiny=Boolean(store.state.shiny[id]);renderDetails();dialog.showModal();playTone(650);
+  detail=id;detailShiny=Boolean(store.state.shiny[id]);renderDetails();dialog.showModal();document.body.classList.add('card-detail-open');playTone(650);
  }
  $('catalog-grid').addEventListener('click',event=>{
   const card=event.target.closest('[data-character]');if(card)showDetails(card.dataset.character);
@@ -87,7 +99,7 @@ export function createCatalogUI({showScreen,playTone,playMining=()=>playTone(250
  $('catalog-back').onclick=()=>{closeDetails();showScreen(returnTo)};
  $('close-card').onclick=closeDetails;
  dialog.addEventListener('click',event=>{if(event.target===dialog)closeDetails()});
- dialog.addEventListener('close',()=>window.speechSynthesis?.cancel());
+ dialog.addEventListener('close',()=>{document.body.classList.remove('card-detail-open');window.speechSynthesis?.cancel()});
  $('normal-card').onclick=()=>{detailShiny=false;renderDetails()};
  $('shiny-card').onclick=()=>{detailShiny=true;renderDetails()};
  $('read-card').onclick=()=>{

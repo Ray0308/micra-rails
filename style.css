@@ -364,3 +364,15 @@ body.booting> :not(.boot-screen):not(.version-badge){visibility:hidden}
 .goal-entry-west{left:8%;top:50%;transform:translateY(-50%)}
 .tile.goal-tile .rail-art{filter:drop-shadow(0 0 1px #ffe6a5)}
 #reward-screen[data-material-ready="false"] .mining-stage{visibility:hidden}
+
+/* Only visible still-image character art moves; original animated GIFs stay untouched. */
+.card-portrait.has-image img[data-idle]{width:94%;max-width:94%;height:94%;transform-origin:50% 80%;animation-duration:var(--idle-duration,3.6s);animation-delay:var(--idle-delay,0s);animation-timing-function:ease-in-out;animation-iteration-count:infinite;animation-play-state:paused}
+.card-portrait img[data-idle="bob"]{animation-name:card-idle-bob}
+.card-portrait img[data-idle="float"]{animation-name:card-idle-float}
+.card-portrait img[data-idle="sway"]{animation-name:card-idle-sway}
+body[data-screen="guide"] .card-portrait img.idle-visible,body[data-screen="reward"] #reward-screen[data-phase="revealed"] .card-portrait img.idle-visible{animation-play-state:running}
+body.card-detail-open .catalog-grid .card-portrait img[data-idle],body.card-animations-paused .card-portrait img[data-idle]{animation-play-state:paused}
+@keyframes card-idle-bob{0%,100%{transform:translateY(1px)}50%{transform:translateY(-2px)}}
+@keyframes card-idle-float{0%,100%{transform:translateY(2px) rotate(-.5deg)}50%{transform:translateY(-4px) rotate(.5deg)}}
+@keyframes card-idle-sway{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1deg)}}
+@media(prefers-reduced-motion:reduce){.card-portrait img[data-idle]{animation:none!important;transform:none!important}}

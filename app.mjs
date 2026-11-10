@@ -5,7 +5,7 @@ import {WORLDS,isWorld,loadWorld,saveWorld} from './worlds.mjs?v=0.5.6';
 import {createJourneyStore} from './journey.mjs?v=0.5.8';
 import {createAudioController} from './audio.mjs?v=0.4.8';
 import {createCatalogUI} from './catalog-ui.mjs?v=0.6.1';
-import {create,slide,start,ports,neighbor,canEdit,swap,rotate,build,removePlaced} from './engine.mjs?v=0.5.6';
+import {create,slide,start,ports,neighbor,canEdit,swap,rotate,build,removePlaced} from './engine.mjs?v=0.6.2';
 import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS} from './motion.mjs?v=0.3.1';
 
 const $=id=>document.getElementById(id);

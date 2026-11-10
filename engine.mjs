@@ -160,12 +160,12 @@ function prepareWorldPuzzle(world,path,solved,rng,fallback=false){
   const editable=Array.from({length:16},(_,i)=>i).filter(i=>!protectedTiles.has(i));
   if(fallback){
    const outside=editable.filter(i=>!path.includes(i));
-   for(const [n,index] of route.slice(0,4).entries()){
+   for(const [n,index] of route.slice(0,3).entries()){
     const other=outside[n];state.tiles[other].type=state.tiles[index].type==='h'?'v':'h';
     swap(state,index,other);undo.push({kind:'swap',a:index,b:other});
    }
   }else{
-   const count=6+Math.floor(rng()*3);
+   const count=4+Math.floor(rng()*2);
    for(let n=0;n<count;n++){
     const a=route[Math.floor(rng()*route.length)];
     const choices=editable.filter(i=>i!==a&&state.tiles[i].type!==state.tiles[a].type);
@@ -193,10 +193,10 @@ export function generateWorldPuzzle(world,seed){
  if(salt===undefined)throw Error('Unknown world');
  const rng=seededRandom(seed^salt);
  for(let attempt=0;attempt<256;attempt++){
-  const path=randomPath(rng,world==='grass'?[8,10]:[10,12]),solved=solvedTypes(path,rng);
+  const path=randomPath(rng,world==='grass'?[8]:[10,12]),solved=solvedTypes(path,rng);
   const puzzle=prepareWorldPuzzle(world,path,solved,rng);
   const blockers=path.slice(3,-1).filter(i=>puzzle.types[i]!==solved[i]).length;
-  if(world==='grass'&&(blockers<4||puzzle.solution.length<4))continue;
+  if(world==='grass'&&(blockers<3||puzzle.solution.length<3))continue;
   if(world==='mine'&&(blockers<5||new Set(puzzle.solution.map(a=>a.index)).size<5))continue;
   if(puzzle.solution.length&&!(world!=='nether'&&automaticallyWins(puzzle.types))&&certifyWorld(puzzle,world,seed))return {...puzzle,seed:seed>>>0};
  }

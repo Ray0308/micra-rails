@@ -145,8 +145,9 @@ function certifyWorld(puzzle,world,seed){
  return state.status==='won';
 }
 function prepareWorldPuzzle(world,path,solved,rng,fallback=false){
- const typesList=Object.keys(ports),protectedTiles=new Set([...path.slice(0,3),15]);
- const route=path.slice(3,-1);
+ const lead=world==='mine'?2:3;
+ const typesList=Object.keys(ports),protectedTiles=new Set([...path.slice(0,lead),15]);
+ const route=path.slice(lead,-1);
  if(world==='nether'){
   const types=Array(16).fill(null);for(const i of protectedTiles)types[i]=solved[i];
   // Supply no longer spells out the route. Park spare pieces off the route and
@@ -174,7 +175,7 @@ function prepareWorldPuzzle(world,path,solved,rng,fallback=false){
    }
   }
  }else{
-  const chosen=new Set(shuffled(route.filter(i=>state.tiles[i].type!=='cross'),rng).slice(0,6+Math.floor(rng()*2)));
+  const chosen=new Set(route.filter(i=>state.tiles[i].type!=='cross'));
   // Repair proof follows route order, so human-paced taps finish before entry locking.
   for(const index of route.filter(i=>chosen.has(i))){
    const original=state.tiles[index].type,turns=1+Math.floor(rng()*(original==='h'||original==='v'?1:3));
@@ -185,6 +186,34 @@ function prepareWorldPuzzle(world,path,solved,rng,fallback=false){
  }
  return {types:state.tiles.map(t=>t.type),path,solution:world==='grass'?undo.reverse():undo};
 }
+// Reject boards where rotating a few convenient tiles reveals a short shortcut.
+export function hasShortMineRoute(types,firstCell,maxEdges=10){
+ const fixed=new Set([0,firstCell,15]),seen=new Set();
+ function visit(cell,entry,used,depth){
+  if(cell===15)return ports[types[cell]].includes(entry);
+  if(depth>=maxEdges||3-cell%4+3-Math.floor(cell/4)>maxEdges-depth)return false;
+  const key=cell+':'+entry+':'+used;if(seen.has(key))return false;seen.add(key);
+  const type=types[cell];
+  for(const out of [1,2,0,3]){
+   if(out===entry)continue;
+   if(fixed.has(cell)){if(!ports[type].includes(entry)||!ports[type].includes(out))continue;}
+   else if(type==='h'||type==='v'||type==='cross'){if(out!==(entry+2)%4)continue;}
+   else if(out===(entry+2)%4)continue;
+   const next=neighbor(cell,out);if(next<0||(used&(1<<next)))continue;
+   if(visit(next,(out+2)%4,used|(1<<next),depth+1))return true;
+  }
+  return false;
+ }
+ return visit(0,3,1,0);
+}
+function mineTypes(path,types,rng){
+ const choices=Object.keys(ports).filter(t=>t!=='cross');
+ return types.map((type,i)=>{
+  if(type&&type!=='cross')return type;
+  const at=path.indexOf(i);
+  return at>0?(direction(i,path[at-1])%2?'h':'v'):choices[Math.floor(rng()*choices.length)];
+ });
+}
 export function generateWorldPuzzle(world,seed){
  if(world==='end'){
   const puzzle=generatePuzzle(seed);return {...puzzle,solution:puzzle.solution.map(index=>({kind:'slide',index}))};
@@ -193,12 +222,20 @@ export function generateWorldPuzzle(world,seed){
  if(salt===undefined)throw Error('Unknown world');
  const rng=seededRandom(seed^salt);
  for(let attempt=0;attempt<256;attempt++){
-  const path=randomPath(rng,world==='grass'?[8]:[10,12]),solved=solvedTypes(path,rng);
+  const path=randomPath(rng,world==='grass'?[8]:world==='mine'?[12,14]:[10,12]);
+  const solved=world==='mine'?mineTypes(path,solvedTypes(path,rng),rng):solvedTypes(path,rng);
   const puzzle=prepareWorldPuzzle(world,path,solved,rng);
-  const blockers=path.slice(3,-1).filter(i=>puzzle.types[i]!==solved[i]).length;
+  const blockers=path.slice(world==='mine'?2:3,-1).filter(i=>puzzle.types[i]!==solved[i]).length;
   if(world==='grass'&&(blockers<3||puzzle.solution.length<3))continue;
-  if(world==='mine'&&(blockers<6||new Set(puzzle.solution.map(a=>a.index)).size<6))continue;
+  if(world==='mine'&&(blockers<10||hasShortMineRoute(puzzle.types,path[1])))continue;
   if(puzzle.solution.length&&!(world!=='nether'&&automaticallyWins(puzzle.types))&&certifyWorld(puzzle,world,seed))return {...puzzle,seed:seed>>>0};
+ }
+ if(world==='mine'){
+  const path=[0,4,5,1,2,3,7,6,10,9,8,12,13,14,15];
+  const solved=['sw','es','h','sw','ne','wn','es','wn','es','h','wn','v','ne','h','h','h'];
+  const puzzle=prepareWorldPuzzle(world,path,solved,rng,true);
+  if(hasShortMineRoute(puzzle.types,path[1])||!certifyWorld(puzzle,world,seed))throw Error('Invalid expert fallback');
+  return {...puzzle,seed:seed>>>0,fallback:true};
  }
  const path=[0,1,2,3,7,6,5,9,10,11,15],solved=solvedTypes(path,rng);
  for(const i of path)if(solved[i]==='cross')solved[i]=i===0?'h':(direction(i,path[path.indexOf(i)-1])%2?'h':'v');

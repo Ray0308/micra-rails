@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {create,generateWorldPuzzle,applyWorldAction,start,swap,rotate,build,removePlaced,canEdit} from '../engine.mjs';
+import {create,generateWorldPuzzle,applyWorldAction,start,swap,rotate,build,removePlaced,canEdit,hasShortMineRoute} from '../engine.mjs';
 import {createMotion,updateMotion} from '../motion.mjs';
 import {WORLDS,WORLD_KEY,loadWorld,saveWorld} from '../worlds.mjs';
 import {CHARACTERS} from '../catalog-data.mjs';
@@ -62,8 +62,8 @@ test('pending rewards retain their world and an old save without a world still r
  const restored=createCollectionStore(storage);assert.equal(restored.state.reward.world,'nether');assert.equal(restored.state.reward.hits,1);
 });
 
-test('difficulty labels rise 1–4 and repairs affect the route instead of harmless off-route panels',()=>{
- assert.deepEqual(Object.values(WORLDS).map(w=>w.difficulty),[1,2,3,4]);
+test('expert mine and other tiers require repairs on the route',()=>{
+ assert.deepEqual(Object.values(WORLDS).map(w=>w.difficulty),[1,'EX',3,4]);
  for(let seed=0;seed<100;seed++)for(const world of ['grass','mine','nether']){
   const puzzle=generateWorldPuzzle(world,seed),s=create(0,{seed,world});start(s);
   for(const action of puzzle.solution)assert.ok(applyWorldAction(s,action));
@@ -72,8 +72,21 @@ test('difficulty labels rise 1–4 and repairs affect the route instead of harml
    const offRoute=puzzle.solution.filter(a=>!puzzle.path.includes(a.index));assert.equal(offRoute.length,2);
    assert.equal(puzzle.solution.length,puzzle.path.length-4+2);
   }else{
-   const mismatches=puzzle.path.slice(3,-1).filter(i=>puzzle.types[i]!==s.tiles[i].type).length;
-   assert.ok(mismatches>=(world==='grass'?3:6),world+' must require route repairs');
+   const mismatches=puzzle.path.slice(world==='mine'?2:3,-1).filter(i=>puzzle.types[i]!==s.tiles[i].type).length;
+   assert.ok(mismatches>=(world==='grass'?3:10),world+' must require route repairs');
   }
  }
+});
+
+
+test('expert mine uses long routes and rejects shortcuts reachable by rotating the tiles',()=>{
+ for(let seed=0;seed<500;seed++){
+  const p=generateWorldPuzzle('mine',seed);
+  assert.ok([12,14].includes(p.path.length-1));
+  assert.ok(new Set(p.solution.map(a=>a.index)).size>=10);
+  assert.equal(p.types.includes('cross'),false);
+  assert.equal(hasShortMineRoute(p.types,p.path[1],10),false);
+ }
+ const simple=Array(16).fill('h');simple[3]='sw';simple[7]=simple[11]=simple[15]='v';
+ assert.equal(hasShortMineRoute(simple,1,6),true);assert.equal(hasShortMineRoute(simple,1,4),false);
 });

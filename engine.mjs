@@ -134,7 +134,7 @@ function worldOperation(s,action){
 function worldState(puzzle,level,world,seed){
  const state=stateFromTypes(puzzle.types,level);state.world=world;state.seed=seed>>>0;
  if(world==='nether'){
-  state.queue=[...puzzle.queue];state.queueDraws=0;state.placed=new Set();fillSupply(state);
+  state.queue=[...puzzle.queue];state.queueDraws=puzzle.queueDraws||0;state.placed=new Set(puzzle.placed||[]);fillSupply(state);
  }
  return state;
 }
@@ -207,6 +207,28 @@ export function generateWorldPuzzle(world,seed){
  return {...puzzle,seed:seed>>>0,fallback:true};
 }
 export function applyWorldAction(s,action){return worldOperation(s,action)}
-export function create(level=0,{seed=Math.floor(Math.random()*4294967296),world='end'}={}){
- return worldState(generateWorldPuzzle(world,seed),level,world,seed);
+// Apply a prefix of the certified repair, retaining a meaningful player action.
+export function generateAssistedPuzzle(world,seed,boardHelp=0){
+ const puzzle=generateWorldPuzzle(world,seed);
+ const help=Number.isSafeInteger(boardHelp)?Math.max(0,Math.min(3,boardHelp)):0;
+ if(!help)return puzzle;
+ const proof=worldState(puzzle,0,world,seed);let consumed=0,repairs=0;
+ while(consumed<puzzle.solution.length-1&&repairs<help){
+  let end=consumed+1;
+  if(world==='mine')while(end<puzzle.solution.length&&puzzle.solution[end].index===puzzle.solution[consumed].index)end++;
+  if(end>=puzzle.solution.length)break;
+  const snapshot=JSON.stringify({tiles:proof.tiles,queue:proof.queue,queueDraws:proof.queueDraws,placed:[...(proof.placed||[])],moves:proof.moves});
+  for(let i=consumed;i<end;i++)if(!worldOperation(proof,puzzle.solution[i]))throw Error('Invalid assistance repair');
+  if(automaticallyWins(proof.tiles.map(t=>t?.type??null))){
+   const old=JSON.parse(snapshot);Object.assign(proof,old);if(world==='nether')proof.placed=new Set(old.placed);break;
+  }
+  if(world!=='nether'||puzzle.path.includes(puzzle.solution[consumed].index))repairs++;
+  consumed=end;
+ }
+ const assisted={...puzzle,types:proof.tiles.map(t=>t?.type??null),solution:puzzle.solution.slice(consumed)};
+ if(world==='nether')Object.assign(assisted,{queue:[...proof.queue],queueDraws:proof.queueDraws,placed:[...proof.placed]});
+ return assisted;
+}
+export function create(level=0,{seed=Math.floor(Math.random()*4294967296),world='end',boardHelp=0}={}){
+ return worldState(generateAssistedPuzzle(world,seed,boardHelp),level,world,seed);
 }

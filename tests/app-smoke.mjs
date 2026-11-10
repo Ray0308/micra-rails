@@ -1,9 +1,10 @@
 // Minimal DOM harness for startup, navigation, continuous frames, and pause behavior.
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {generatePuzzle,generateWorldPuzzle} from '../engine.mjs';
+import {generatePuzzle,generateWorldPuzzle,generateAssistedPuzzle} from '../engine.mjs';
 import {WORLDS} from '../worlds.mjs';
 import {JOURNEY_KEY} from '../journey.mjs';
+import {ASSISTANCE_KEY} from '../assistance.mjs';
 class Element{
  constructor(id){this.id=id;this.dataset={};this.hidden=false;this.innerHTML='';this.clientWidth=400;this.clientHeight=400;this.offsetLeft=10;this.offsetTop=10;this.style={setProperty(k,v){this[k]=v}};const classes=new Set();this.classList={add:x=>classes.add(x),remove:x=>classes.delete(x),toggle:(x,v)=>v?classes.add(x):classes.delete(x),contains:x=>classes.has(x)};this.events={};this.value=id==='pace'?'easy':'0'}
  setAttribute(name,value){this[name]=value}getAttribute(name){return this[name]}querySelectorAll(){return []}replaceChildren(){this.innerHTML=''}showModal(){this.open=true}close(){this.open=false}animate(){}addEventListener(name,fn){this.events[name]=fn}focus(){}querySelector(){return new Element('button')}
@@ -126,9 +127,10 @@ el('back-title').onclick();enterWorld('end');
 const deathStage=el('stage-number').textContent;
 function explodeCart(){el('start').onclick();el('start').onclick();for(let i=0;i<110;i++){frame(testClock);testClock+=100}}
 explodeCart();assert.equal(el('overlay').hidden,false);
+assert.equal(JSON.parse(saved.get(ASSISTANCE_KEY)).failures.end,1);
 assert.equal(el('result-title').textContent,'YOUdead!');assert.equal(el('result-text').textContent,'クリーパーに爆破された');
 el('again').onclick();assert.equal(el('overlay').hidden,true);assert.equal(el('stage-number').textContent,deathStage);assert.equal(el('moves').textContent,'0 手');assert.equal(el('start').disabled,false);
-explodeCart();el('death-title').onclick();assert.equal(document.body.dataset.screen,'title');assert.equal(el('overlay').hidden,true);
+explodeCart();assert.equal(JSON.parse(saved.get(ASSISTANCE_KEY)).failures.end,2);el('death-title').onclick();assert.equal(document.body.dataset.screen,'title');assert.equal(el('overlay').hidden,true);
 const drawsBeforeMapChange=JSON.parse(saved.get(key)).draws;
 for(const world of ['grass','mine','nether','end']){
  enterWorld(world);const stage=el('stage-number').textContent,before=JSON.parse(saved.get(JOURNEY_KEY));
@@ -144,4 +146,11 @@ for(const world of ['grass','mine','nether','end']){
 enterWorld('end');explodeCart();const lostStage=el('stage-number').textContent,lostSeed=JSON.parse(saved.get(JOURNEY_KEY)).seed;
 el('death-change-map').onclick();assert.equal(el('overlay').hidden,true);assert.equal(el('stage-number').textContent,lostStage);assert.notEqual(JSON.parse(saved.get(JOURNEY_KEY)).seed,lostSeed);
 assert.equal(JSON.parse(saved.get(key)).draws,drawsBeforeMapChange);
-console.log('PASS: four worlds, rewards, normal collection, death screen and free map rerolls without advancing or granting rewards');
+const beforeRetry=JSON.parse(saved.get(ASSISTANCE_KEY));el('reset').onclick();assert.deepEqual(JSON.parse(saved.get(ASSISTANCE_KEY)),beforeRetry);
+const assistedLevel=JSON.parse(saved.get(JOURNEY_KEY)),help=Math.floor(beforeRetry.failures.end/2);
+const assistedPlan=generateAssistedPuzzle('end',assistedLevel.seed,help);
+el('start').onclick();el('start').onclick();for(const action of assistedPlan.solution)slidePanel(action.index);el('start').onclick();
+for(let i=0;i<350;i++){frame(testClock);testClock+=100}
+assert.equal(document.body.dataset.screen,'reward');assert.deepEqual(JSON.parse(saved.get(ASSISTANCE_KEY)).failures,{});
+assert.equal(JSON.parse(saved.get(ASSISTANCE_KEY)).level,assistedLevel.level+1);
+console.log('PASS: world operations, rewards, rerolls, normal collection, persisted defeat assistance and reset after clear');

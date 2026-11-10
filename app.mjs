@@ -1,3 +1,4 @@
+import {createAssistanceStore} from './assistance.mjs?v=0.6.4';
 import {runStartup} from './startup.mjs?v=0.6.0';
 import {railArtwork} from './rail-art.mjs?v=0.4.4';
 import {renderTiles} from './tile-view.mjs?v=0.4.3';
@@ -5,8 +6,8 @@ import {WORLDS,isWorld,loadWorld,saveWorld} from './worlds.mjs?v=0.5.6';
 import {createJourneyStore} from './journey.mjs?v=0.5.8';
 import {createAudioController} from './audio.mjs?v=0.4.8';
 import {createCatalogUI} from './catalog-ui.mjs?v=0.6.1';
-import {create,slide,start,ports,neighbor,canEdit,swap,rotate,build,removePlaced} from './engine.mjs?v=0.6.2';
-import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS} from './motion.mjs?v=0.6.3';
+import {create,slide,start,ports,neighbor,canEdit,swap,rotate,build,removePlaced} from './engine.mjs?v=0.6.4';
+import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS} from './motion.mjs?v=0.6.4';
 
 const $=id=>document.getElementById(id);
 const STOP_ICON='<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6H18V18H6Z" fill="currentColor"/></svg>';
@@ -16,6 +17,7 @@ let audioStorage;
 try{audioStorage=window.localStorage}catch{}
 const audio=createAudioController({storage:audioStorage});
 const journey=createJourneyStore(audioStorage);
+const assistance=createAssistanceStore(audioStorage);
 let selectedWorld=loadWorld(audioStorage),selectedTile=null;
 const brakeFreezesWorld=()=>Boolean(motion?.cartStopped&&WORLDS[selectedWorld].pausePursuitOnBrake);
 let metrics={width:0,height:0,gap:5};
@@ -78,7 +80,8 @@ function reset(){
   stopFuseSound();
   runId=globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+'-'+Math.random().toString(36).slice(2);
   const current=journey.state;
-  state=create(current.level,{seed:current.seed,world:selectedWorld});motion=createMotion(state);selectedTile=null;
+  const support=assistance.profile(current.level,selectedWorld);
+  state=create(current.level,{seed:current.seed,world:selectedWorld,boardHelp:support.boardHelp});motion=createMotion(state);motion.assistSpeed=support.creeperSpeed;selectedTile=null;
   document.body.dataset.world=selectedWorld;
   paused=false;last=null;pointer=null;
   $('overlay').hidden=true;$('board').classList.remove('boom');
@@ -208,7 +211,8 @@ document.addEventListener('visibilitychange',()=>{
 
 function finish(win){
   stopFuseSound();
-  if(win){tone(850,.25);render();collectionUI.beginReward(runId,state.level,state.world);journey.complete(state.level);return;}
+  if(win){tone(850,.25);render();collectionUI.beginReward(runId,state.level,state.world);journey.complete(state.level);assistance.profile(journey.state.level,selectedWorld);return;}
+  assistance.recordLoss(state.level,state.world,runId);
   $('overlay').hidden=false;
   $('result-title').textContent='YOUdead!';
   $('result-text').textContent='クリーパーに爆破された';
@@ -221,7 +225,7 @@ function tick(now){
   const delta=last===null?0:Math.min(now-last,100);last=now;
   if(state.status==='running'&&!paused){
     const previousFuse=motion.fuse;
-    const changed=updateMotion(state,motion,delta,{...WORLDS[selectedWorld],fuseMs:CREEPER_FUSE_MS});
+    const changed=updateMotion(state,motion,delta,{...WORLDS[selectedWorld],fuseMs:CREEPER_FUSE_MS,creeperSpeedScale:motion.assistSpeed});
     if(motion.fuse>0&&previousFuse===0)beginFuseSound();
     else if(motion.fuse===0&&previousFuse>0)stopFuseSound();
     if(changed)render();

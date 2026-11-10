@@ -17,7 +17,7 @@ export function sampleRoute(route,distance){
 }
 
 // Distances are measured along the trail in cells, independently of frame rate.
-export function updateMotion(state,m,delta,{aInterval=2600,bInterval=2200,delay=5500,fuseMs=CREEPER_FUSE_MS,pausePursuitOnBrake=false}={}){
+export function updateMotion(state,m,delta,{aInterval=2600,bInterval=2200,delay=5500,fuseMs=CREEPER_FUSE_MS,pausePursuitOnBrake=false,creeperSpeedScale=1}={}){
   if(state.status!=='running')return false;
   if(pausePursuitOnBrake&&m.cartStopped){m.movingA=m.movingB=false;return false;}
   let changed=false;
@@ -56,7 +56,7 @@ export function updateMotion(state,m,delta,{aInterval=2600,bInterval=2200,delay=
       if(m.bDistance===null){m.bDistance=0;changed=true;}
       const previous=m.bDistance;
       const ignited=m.fuse>0;
-      if(!ignited)m.bDistance=Math.min(m.aDistance,m.bDistance+activeTime*CREEPER_SPEED_MULTIPLIER/bInterval);
+      if(!ignited)m.bDistance=Math.min(m.aDistance,m.bDistance+activeTime*CREEPER_SPEED_MULTIPLIER*creeperSpeedScale/bInterval);
       m.movingB=!ignited&&m.bDistance>previous;
       state.bStep=Math.floor(m.bDistance);
       state.b=m.route[Math.min(state.bStep,m.route.length-1)];

@@ -69,9 +69,9 @@ test('an ignited Creeper stands still and cancels ignition after the cart escape
  run(s,m,1100,{delay:0,aInterval:1900,bInterval:CREEPER_STEP_MS});assert.equal(s.status,'running');assert.equal(m.fuse,0);assert.ok(m.bDistance>1,'pursuit must restart after cancellation');
 });
 
-test('the adjusted walking speed takes 1.7 seconds per cell',()=>{
+test('Creeper moves at 75 percent of its original walking speed',()=>{
  const [s,m]=caughtAtBlockedRail();m.bDistance=0;
- run(s,m,850,{delay:0,bInterval:CREEPER_STEP_MS});assert.ok(Math.abs(m.bDistance-.5)<.001);assert.equal(m.fuse,0);
+ run(s,m,850,{delay:0,bInterval:CREEPER_STEP_MS});assert.ok(Math.abs(m.bDistance-.375)<.001);assert.equal(m.fuse,0);
 });
 
 test('cart brake freezes position and tile locking, permits rail slides, and resumes without jumping',()=>{
@@ -88,7 +88,7 @@ test('brake before the first movement does not reserve or lock the next panel',(
 
 test('the Creeper keeps walking and can ignite and explode while the cart brake is held',()=>{
  const [s,m]=caughtAtBlockedRail();m.bDistance=0;m.cartStopped=true;
- run(s,m,850,{delay:0,bInterval:CREEPER_STEP_MS});assert.equal(m.aDistance,1);assert.ok(m.bDistance>.49);assert.equal(m.movingB,true);
+ run(s,m,850,{delay:0,bInterval:CREEPER_STEP_MS});assert.equal(m.aDistance,1);assert.ok(m.bDistance>.374&&m.bDistance<.376);assert.equal(m.movingB,true);
  run(s,m,5000,{delay:0,bInterval:CREEPER_STEP_MS});assert.equal(s.status,'lost');assert.equal(m.aDistance,1);assert.ok(m.fuse>=3000);
 });
 

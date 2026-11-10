@@ -2,6 +2,7 @@ import {nextStep,advance} from './engine.mjs?v=0.3.1';
 
 export const CREEPER_FUSE_MS=3000;
 export const CREEPER_STEP_MS=1700;
+export const CREEPER_SPEED_MULTIPLIER=.75;
 
 export function createMotion(state){
   return {elapsed:0,route:[state.a],aDistance:0,bDistance:null,segment:null,fuse:0,movingA:false,movingB:false,cartStopped:false};
@@ -55,7 +56,7 @@ export function updateMotion(state,m,delta,{aInterval=2600,bInterval=2200,delay=
       if(m.bDistance===null){m.bDistance=0;changed=true;}
       const previous=m.bDistance;
       const ignited=m.fuse>0;
-      if(!ignited)m.bDistance=Math.min(m.aDistance,m.bDistance+activeTime/bInterval);
+      if(!ignited)m.bDistance=Math.min(m.aDistance,m.bDistance+activeTime*CREEPER_SPEED_MULTIPLIER/bInterval);
       m.movingB=!ignited&&m.bDistance>previous;
       state.bStep=Math.floor(m.bDistance);
       state.b=m.route[Math.min(state.bStep,m.route.length-1)];

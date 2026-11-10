@@ -6,7 +6,7 @@ import {createJourneyStore} from './journey.mjs?v=0.5.8';
 import {createAudioController} from './audio.mjs?v=0.4.8';
 import {createCatalogUI} from './catalog-ui.mjs?v=0.6.1';
 import {create,slide,start,ports,neighbor,canEdit,swap,rotate,build,removePlaced} from './engine.mjs?v=0.6.2';
-import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS} from './motion.mjs?v=0.3.1';
+import {createMotion,updateMotion,sampleRoute,CREEPER_FUSE_MS} from './motion.mjs?v=0.6.3';
 
 const $=id=>document.getElementById(id);
 const STOP_ICON='<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6H18V18H6Z" fill="currentColor"/></svg>';

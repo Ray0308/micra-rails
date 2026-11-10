@@ -73,7 +73,7 @@ test('difficulty labels rise 1–4 and repairs affect the route instead of harml
    assert.equal(puzzle.solution.length,puzzle.path.length-4+2);
   }else{
    const mismatches=puzzle.path.slice(3,-1).filter(i=>puzzle.types[i]!==s.tiles[i].type).length;
-   assert.ok(mismatches>=(world==='grass'?3:5),world+' must require route repairs');
+   assert.ok(mismatches>=(world==='grass'?3:6),world+' must require route repairs');
   }
  }
 });

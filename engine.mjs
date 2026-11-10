@@ -174,7 +174,7 @@ function prepareWorldPuzzle(world,path,solved,rng,fallback=false){
    }
   }
  }else{
-  const chosen=new Set(shuffled(route.filter(i=>state.tiles[i].type!=='cross'),rng).slice(0,5+Math.floor(rng()*2)));
+  const chosen=new Set(shuffled(route.filter(i=>state.tiles[i].type!=='cross'),rng).slice(0,6+Math.floor(rng()*2)));
   // Repair proof follows route order, so human-paced taps finish before entry locking.
   for(const index of route.filter(i=>chosen.has(i))){
    const original=state.tiles[index].type,turns=1+Math.floor(rng()*(original==='h'||original==='v'?1:3));
@@ -197,7 +197,7 @@ export function generateWorldPuzzle(world,seed){
   const puzzle=prepareWorldPuzzle(world,path,solved,rng);
   const blockers=path.slice(3,-1).filter(i=>puzzle.types[i]!==solved[i]).length;
   if(world==='grass'&&(blockers<3||puzzle.solution.length<3))continue;
-  if(world==='mine'&&(blockers<5||new Set(puzzle.solution.map(a=>a.index)).size<5))continue;
+  if(world==='mine'&&(blockers<6||new Set(puzzle.solution.map(a=>a.index)).size<6))continue;
   if(puzzle.solution.length&&!(world!=='nether'&&automaticallyWins(puzzle.types))&&certifyWorld(puzzle,world,seed))return {...puzzle,seed:seed>>>0};
  }
  const path=[0,1,2,3,7,6,5,9,10,11,15],solved=solvedTypes(path,rng);
